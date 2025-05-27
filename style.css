@@ -373,6 +373,19 @@ button {
   background: var(--accent-danger-hover) !important;
 }
 
+.btn-danger-style {
+  background-color: var(--accent-danger);
+  color: white;
+  border: 1px solid var(--accent-danger);
+}
+
+.btn-danger-style:hover {
+  background-color: var(--accent-danger-hover);
+  border-color: var(--accent-danger-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -477,7 +490,6 @@ button:disabled {
   cursor: pointer;
   transition: all var(--transition-fast);
   user-select: none;
-  position: relative;
 }
 
 #item-table th:hover {

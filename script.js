@@ -35,9 +35,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const portfolioSearchInput = document.getElementById('portfolio-search');
     const clearSearchBtn = document.getElementById('clear-search');
 
+    // Import elements
+    const importBtn = document.getElementById('import-btn');
+    const importFileInput = document.getElementById('import-file-input');
+
+    // Delete All element
+    const deleteAllBtn = document.getElementById('delete-all-btn');
+
     const OSRS_API_BASE_URL = 'https://prices.runescape.wiki/api/v1/osrs';
     const OSRS_WIKI_IMG_BASE_URL = 'https://oldschool.runescape.wiki/images/';
     const USER_AGENT = 'merch_tracker_app - YOUR_DISCORD_OR_EMAIL'; // PLEASE REPLACE WITH ACTUAL CONTACT
+
+    // Helper function to format currency
+    function formatCurrency(value) {
+        if (typeof value !== 'number' || isNaN(value)) return '0'; // Return '0' or 'N/A' for non-numbers
+        // Use toLocaleString for consistent number formatting
+        return value.toLocaleString('en-US', { 
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 0 
+        });
+    }
 
     let trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
     let itemMapping = null;
@@ -310,15 +327,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalProfitLoss = totalCurrentValue - totalInvestment;
 
             totalItemsEl.textContent = items.length.toString();
-            totalInvestmentEl.textContent = totalInvestment.toLocaleString();
-            currentValueEl.textContent = totalCurrentValue.toLocaleString();
+            totalInvestmentEl.textContent = formatCurrency(totalInvestment);
+            currentValueEl.textContent = formatCurrency(totalCurrentValue);
             
-            totalProfitLossEl.textContent = totalProfitLoss.toLocaleString();
+            totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
             totalProfitLossEl.className = totalProfitLoss > 0 ? 'stat-value profit' : 
                                           totalProfitLoss < 0 ? 'stat-value loss' : 'stat-value';
 
             summaryItemsEl.textContent = items.length.toString();
-            summaryPlEl.textContent = totalProfitLoss.toLocaleString();
+            summaryPlEl.textContent = formatCurrency(totalProfitLoss);
             summaryPlEl.className = totalProfitLoss > 0 ? 'summary-pl profit' : 
                                    totalProfitLoss < 0 ? 'summary-pl loss' : 'summary-pl';
         });
@@ -395,65 +412,50 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('osrsMerchItems', JSON.stringify(trackedItems));
     }
 
-    function updateStatistics(latestPricesData) {
-        if (!trackedItems.length) {
-            totalItemsEl.textContent = '0';
-            totalInvestmentEl.textContent = '0';
-            currentValueEl.textContent = '0';
-            totalProfitLossEl.textContent = '0';
-            totalProfitLossEl.className = 'stat-value';
-            
-            // Update summary for mobile toggle
-            summaryItemsEl.textContent = '0';
-            summaryPlEl.textContent = '0';
-            summaryPlEl.className = 'summary-pl';
+    async function updateStatistics() {
+        if (!trackedItems || !totalItemsEl || !totalInvestmentEl || !currentValueEl || !totalProfitLossEl || !summaryItemsEl || !summaryPlEl) {
+            console.error("DOM elements for statistics not found or trackedItems missing.");
             return;
         }
 
         let totalInvestment = 0;
-        let totalCurrentValue = 0;
+        let currentValue = 0;
+        const itemsCount = trackedItems.length;
 
         for (const item of trackedItems) {
-            const investment = item.purchasePrice * item.quantity;
-            totalInvestment += investment;
-
-            if (latestPricesData && latestPricesData.data && latestPricesData.data[item.id]) {
-                const priceInfo = latestPricesData.data[item.id];
-                let currentPrice = null;
-
-                if (priceInfo.high !== null && priceInfo.low !== null) {
-                    currentPrice = Math.round((priceInfo.high + priceInfo.low) / 2);
-                } else if (priceInfo.high !== null) {
-                    currentPrice = priceInfo.high;
-                } else if (priceInfo.low !== null) {
-                    currentPrice = priceInfo.low;
-                }
-
-                if (currentPrice !== null) {
-                    totalCurrentValue += currentPrice * item.quantity;
-                } else {
-                    totalCurrentValue += investment; // Fallback to investment if no price data
-                }
-            } else {
-                totalCurrentValue += investment; // Fallback to investment if no price data
+            totalInvestment += parseFloat(item.purchasePrice) * parseInt(item.quantity);
+            const price = parseFloat(item.currentPrice);
+            if (typeof price === 'number' && !isNaN(price)) {
+                currentValue += price * parseInt(item.quantity);
             }
         }
 
-        const totalProfitLoss = totalCurrentValue - totalInvestment;
+        const totalProfitLoss = currentValue - totalInvestment;
 
-        totalItemsEl.textContent = trackedItems.length.toString();
-        totalInvestmentEl.textContent = totalInvestment.toLocaleString();
-        currentValueEl.textContent = totalCurrentValue.toLocaleString();
+        totalItemsEl.textContent = itemsCount.toLocaleString();
+        totalInvestmentEl.textContent = formatCurrency(totalInvestment);
+        currentValueEl.textContent = formatCurrency(currentValue);
+        totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
+
+        totalProfitLossEl.classList.remove('profit', 'loss', 'neutral');
+        if (totalProfitLoss > 0) {
+            totalProfitLossEl.classList.add('profit');
+        } else if (totalProfitLoss < 0) {
+            totalProfitLossEl.classList.add('loss');
+        } else {
+            totalProfitLossEl.classList.add('neutral');
+        }
         
-        totalProfitLossEl.textContent = totalProfitLoss.toLocaleString();
-        totalProfitLossEl.className = totalProfitLoss > 0 ? 'stat-value profit' : 
-                                      totalProfitLoss < 0 ? 'stat-value loss' : 'stat-value';
-
-        // Update summary for mobile toggle
-        summaryItemsEl.textContent = trackedItems.length.toString();
-        summaryPlEl.textContent = totalProfitLoss.toLocaleString();
-        summaryPlEl.className = totalProfitLoss > 0 ? 'summary-pl profit' : 
-                               totalProfitLoss < 0 ? 'summary-pl loss' : 'summary-pl';
+        summaryItemsEl.textContent = itemsCount.toLocaleString();
+        summaryPlEl.textContent = formatCurrency(totalProfitLoss);
+        summaryPlEl.classList.remove('profit', 'loss');
+        if (totalProfitLoss > 0) {
+            summaryPlEl.classList.add('profit');
+        } else if (totalProfitLoss < 0) {
+            summaryPlEl.classList.add('loss');
+        } else {
+            // neutral for 0 P&L, no specific class needed if default is neutral
+        }
     }
 
     async function renderItems(showLoading = true) {
@@ -464,9 +466,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         itemListBody.innerHTML = ''; 
+        const latestPricesData = await fetchAPI('latest');
+
+        if (latestPricesData && latestPricesData.data) {
+            cachedLatestPrices = latestPricesData; // Cache the fetched data
+            // Update currentPrice on each item in trackedItems
+            trackedItems.forEach(item => {
+                if (latestPricesData.data[item.id]) {
+                    const priceInfo = latestPricesData.data[item.id];
+                    const high = priceInfo.high;
+                    const low = priceInfo.low;
+                    if (high !== null && low !== null) {
+                        item.currentPrice = Math.round((high + low) / 2);
+                    } else if (high !== null) {
+                        item.currentPrice = high;
+                    } else if (low !== null) {
+                        item.currentPrice = low;
+                    } else {
+                        item.currentPrice = null; 
+                    }
+                } else {
+                    item.currentPrice = null; // Item not found in current price data
+                }
+            });
+            if (errorMessageP.textContent === 'Could not fetch latest prices. Displaying stored data.') {
+                displayError(''); // Clear previous error if prices are now fetched
+            }
+        } else {
+            // If fetching prices failed, set all currentPrices to null
+            trackedItems.forEach(item => {
+                item.currentPrice = null;
+            });
+            if (!errorMessageP.classList.contains('active')) {
+                //displayError('Could not fetch latest prices. P&L and Current Value might be inaccurate.');
+                // Decided to keep this less intrusive or rely on N/A display in table
+            }
+        }
+
         if (!trackedItems.length) {
             if (showLoading) {
-                // Ensure minimum 1 second loading time
                 const elapsed = Date.now() - startTime;
                 const remaining = Math.max(0, 500 - elapsed);
                 await new Promise(resolve => setTimeout(resolve, remaining));
@@ -475,29 +513,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.textContent = 'No items tracked yet. Add some!';
-            td.colSpan = 6; // Updated colspan for new table structure (removed Actions column)
+            td.colSpan = 6; 
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             itemListBody.appendChild(tr);
-            updateStatistics(null); // No data to cache here
+            await updateStatistics(); // updateStatistics uses item.currentPrice from trackedItems
             return;
         }
 
-        const latestPricesData = await fetchAPI('latest');
-        if (latestPricesData) { // Cache the fetched data
-            cachedLatestPrices = latestPricesData;
-        }
-
-        if (!latestPricesData || !latestPricesData.data) {
-            if (!errorMessageP.classList.contains('active')) {
-                displayError('Could not fetch latest prices. Displaying stored data.');
-            }
-        } else {
-            if (errorMessageP.textContent === 'Could not fetch latest prices. Displaying stored data.') {
-                displayError('');
-            }
-        }
-
+        // Now that item.currentPrice is set on each item, the loop below will use it.
         for (const item of trackedItems) {
             const tr = document.createElement('tr');
             tr.dataset.itemId = item.uniqueId;
@@ -513,7 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return td;
             }
 
-            // Item Cell (Icon + Name)
             const itemCell = createCell('', 'Item');
             const itemContainer = document.createElement('div');
             itemContainer.classList.add('item-cell');
@@ -537,69 +560,45 @@ document.addEventListener('DOMContentLoaded', () => {
             itemCell.appendChild(itemContainer);
             tr.appendChild(itemCell);
 
-            // Purchase Price Cell
             const purchasePriceCell = createCell('', 'Purchase Price');
-            purchasePriceCell.innerHTML = `<span class="currency">${item.purchasePrice.toLocaleString()}</span>`;
+            purchasePriceCell.innerHTML = `<span class="currency">${formatCurrency(item.purchasePrice)}</span>`;
             tr.appendChild(purchasePriceCell);
 
-            // Quantity Cell
             tr.appendChild(createCell(item.quantity.toLocaleString(), 'Qty'));
             
-            // Investment Cell
-            const totalInvestment = item.purchasePrice * item.quantity;
+            const totalInvestmentForItem = item.purchasePrice * item.quantity;
             const investmentCell = createCell('', 'Investment');
-            investmentCell.innerHTML = `<span class="currency">${totalInvestment.toLocaleString()}</span>`;
+            investmentCell.innerHTML = `<span class="currency">${formatCurrency(totalInvestmentForItem)}</span>`;
             tr.appendChild(investmentCell);
 
-            // Current Price Cell
-            let currentPrice = null;
+            // Current Price Cell - uses item.currentPrice directly now
             const currentPriceCell = createCell('', 'Current Price');
-
-            if (latestPricesData && latestPricesData.data && latestPricesData.data[item.id]) {
-                const priceInfo = latestPricesData.data[item.id];
-                const currentPriceHigh = priceInfo.high;
-                const currentPriceLow = priceInfo.low;
-
-                if (currentPriceHigh !== null && currentPriceLow !== null) {
-                    currentPrice = Math.round((currentPriceHigh + currentPriceLow) / 2);
-                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
-                } else if (currentPriceHigh !== null) {
-                    currentPrice = currentPriceHigh;
-                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
-                } else if (currentPriceLow !== null) {
-                    currentPrice = currentPriceLow;
-                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
-                } else {
-                    currentPriceCell.innerHTML = '<span class="text-muted">N/A</span>';
-                }
+            if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
+                currentPriceCell.innerHTML = `<span class="currency">${formatCurrency(item.currentPrice)}</span>`;
             } else {
                 currentPriceCell.innerHTML = '<span class="text-muted">N/A</span>';
             }
             tr.appendChild(currentPriceCell);
 
-            // Profit/Loss Cell
+            // Profit/Loss Cell - uses item.currentPrice directly now
             const profitLossCell = createCell('', 'P&L');
-            if (currentPrice !== null) {
-                const potentialSale = currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestment;
+            if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
+                const potentialSale = item.currentPrice * item.quantity;
+                const profitLoss = potentialSale - totalInvestmentForItem;
                 const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
-                profitLossCell.innerHTML = `<span class="${profitClass} currency">${profitLoss.toLocaleString()}</span>`;
+                profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
                 profitLossCell.innerHTML = '<span class="neutral">N/A</span>';
             }
             tr.appendChild(profitLossCell);
 
-            // Add click handler for row editing
             tr.addEventListener('click', () => openEditModal(item.uniqueId));
-
             itemListBody.appendChild(tr);
         }
         
-        // Update statistics after rendering items
-        updateStatistics(latestPricesData);
+        await updateStatistics(); // updateStatistics uses item.currentPrice from trackedItems
         
         if (showLoading) {
-            // Ensure minimum 1 second loading time
             const elapsed = Date.now() - startTime;
             const remaining = Math.max(0, 1000 - elapsed);
             await new Promise(resolve => setTimeout(resolve, remaining));
@@ -610,8 +609,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function addItem() {
         displayError('');
         const name = itemNameInput.value.trim();
-        const purchasePrice = parseInt(purchasePriceInput.value);
-        const quantity = parseInt(quantityInput.value);
+        const purchasePrice = parseFloat(purchasePriceInput.value.replace(/,/g, ''));
+        const quantity = parseInt(quantityInput.value.replace(/,/g, ''), 10);
 
         if (!name || isNaN(purchasePrice) || purchasePrice <= 0 || isNaN(quantity) || quantity <= 0) {
             displayError('Please enter a valid item name, purchase price, and quantity.');
@@ -792,8 +791,8 @@ document.addEventListener('DOMContentLoaded', () => {
     saveItemBtn.addEventListener('click', async () => {
         if (!editingItemId) return;
 
-        const purchasePrice = parseInt(document.getElementById('edit-purchase-price').value);
-        const quantity = parseInt(document.getElementById('edit-quantity').value);
+        const purchasePrice = parseFloat(document.getElementById('edit-purchase-price').value.replace(/,/g, ''));
+        const quantity = parseInt(document.getElementById('edit-quantity').value.replace(/,/g, ''), 10);
 
         if (isNaN(purchasePrice) || purchasePrice <= 0 || isNaN(quantity) || quantity <= 0) {
             displayEditError('Please enter valid purchase price and quantity.');
@@ -980,13 +979,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (currentPriceHigh !== null && currentPriceLow !== null) {
                     currentPrice = Math.round((currentPriceHigh + currentPriceLow) / 2);
-                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
+                    currentPriceCell.innerHTML = `<span class="currency">${formatCurrency(currentPrice)}</span>`;
                 } else if (currentPriceHigh !== null) {
                     currentPrice = currentPriceHigh;
-                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
+                    currentPriceCell.innerHTML = `<span class="currency">${formatCurrency(currentPrice)}</span>`;
                 } else if (currentPriceLow !== null) {
                     currentPrice = currentPriceLow;
-                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
+                    currentPriceCell.innerHTML = `<span class="currency">${formatCurrency(currentPrice)}</span>`;
                 } else {
                     currentPriceCell.innerHTML = '<span class="text-muted">N/A</span>';
                 }
@@ -1000,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const potentialSale = currentPrice * item.quantity;
                 const profitLoss = potentialSale - totalInvestment;
                 const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
-                profitLossCell.innerHTML = `<span class="${profitClass} currency">${profitLoss.toLocaleString()}</span>`;
+                profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
                 profitLossCell.innerHTML = '<span class="neutral">N/A</span>';
             }
@@ -1010,27 +1009,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Portfolio search event listeners
-    portfolioSearchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
+    portfolioSearchInput.addEventListener('input', async () => {
+        searchQuery = portfolioSearchInput.value;
         showSearchResults();
-        
-        // Show/hide clear button
-        if (searchQuery.trim()) {
-            clearSearchBtn.style.display = 'flex';
-            portfolioSearchInput.style.paddingRight = '2.5rem';
-        } else {
-            clearSearchBtn.style.display = 'none';
-            portfolioSearchInput.style.paddingRight = '2.5rem';
-        }
+        await updateStatistics(); // Ensure stats are updated after search
+        clearSearchBtn.style.display = searchQuery ? 'block' : 'none';
     });
 
-    clearSearchBtn.addEventListener('click', () => {
-        searchQuery = '';
+    clearSearchBtn.addEventListener('click', async () => {
         portfolioSearchInput.value = '';
+        searchQuery = ''; // Explicitly clear searchQuery global
+        showSearchResults(); // Show all items
+        await updateStatistics(); // Ensure stats are updated after clearing search
         clearSearchBtn.style.display = 'none';
-        portfolioSearchInput.style.paddingRight = '2.5rem';
-        showSearchResults();
-        portfolioSearchInput.focus();
+        portfolioSearchInput.focus(); // Optional: return focus to search bar
     });
 
     // Table sorting event listeners
@@ -1075,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     reorderTableRows();
                     
                     // Update statistics with current data (prefer data used for sort)
-                    updateStatistics(latestPricesDataForSort || cachedLatestPrices);
+                    await updateStatistics();
                 } else {
                     // Full re-render only if table is empty or needs to be built
                     // renderItems will fetch if cache is null, or use cache
@@ -1088,6 +1080,208 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Add Enter key submission for Add Item Modal
+    [itemNameInput, purchasePriceInput, quantityInput].forEach(input => {
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Ensure that if the enter is pressed on itemNameInput and dropdown is open,
+                // we select the item first, then the user can press enter again to submit.
+                // The existing keydown listener for itemNameInput already handles selecting from dropdown.
+                if (document.activeElement === itemNameInput && itemDropdown.classList.contains('show')) {
+                    // If dropdown is open and focused on item name, let existing handler work
+                    return; 
+                }
+                // If error message is not active, then close modal after adding item.
+                // Simulating the button click will also trigger the closeModal if no error.
+                addItemBtn.click(); 
+            }
+        });
+    });
+
+    // Add Enter key submission for Edit Item Modal
+    const editPurchasePriceInput = document.getElementById('edit-purchase-price');
+    const editQuantityInput = document.getElementById('edit-quantity');
+
+    [editPurchasePriceInput, editQuantityInput].forEach(input => {
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveItemBtn.click();
+            }
+        });
+    });
+
+    // --- IMPORT FUNCTIONALITY ---
+    importBtn.addEventListener('click', () => {
+        importFileInput.click(); // Trigger hidden file input
+    });
+
+    importFileInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (file.type !== "text/csv") {
+            displayError("Please select a valid CSV file.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const csvContent = e.target.result;
+            try {
+                const parsedCsvData = parseCSV(csvContent); // Returns array of objects matching CSV columns
+                let newItemsCount = 0;
+                let skippedCount = 0;
+
+                await loadItemMapping(); // Ensure itemMapping is loaded
+                if (!itemMapping) {
+                    displayError("Failed to load item mapping. Cannot import items. Refresh page or check console.");
+                    importFileInput.value = ''; 
+                    return;
+                }
+
+                for (const csvRow of parsedCsvData) {
+                    const itemNameFromCsv = csvRow['Item Name'];
+                    const purchasePriceFromCsv = csvRow['Purchase Price'];
+                    const quantityFromCsv = csvRow['Quantity'];
+
+                    const itemDetails = itemMapping[itemNameFromCsv.toLowerCase()];
+
+                    if (!itemDetails) {
+                        console.warn(`Skipping item "${itemNameFromCsv}" from CSV: Not found in item mapping.`);
+                        skippedCount++;
+                        continue;
+                    }
+
+                    const importedItem = {
+                        uniqueId: Date.now().toString() + Math.random().toString(36).substr(2, 5), // More unique ID
+                        id: itemDetails.id,
+                        name: itemDetails.name, // Use mapped name for consistency
+                        purchasePrice: purchasePriceFromCsv,
+                        quantity: quantityFromCsv,
+                        icon: itemDetails.icon
+                    };
+                    
+                    if (!isValidImportedItem(importedItem)) { // isValidImportedItem will check types after parsing
+                        console.warn("Skipping invalid item data from CSV (after mapping):", importedItem);
+                        skippedCount++;
+                        continue;
+                    }
+
+                    const existingItem = trackedItems.find(item => item.id === importedItem.id && item.purchasePrice === parseFloat(importedItem.purchasePrice)); // Check by OSRS ID and price to avoid simple re-imports of same investment.
+                    if (existingItem) {
+                        // Optionally, update existing items here, for now we skip
+                        console.log(`Skipping already tracked item (same ID and purchase price): ${importedItem.name}`);
+                        skippedCount++;
+                        continue;
+                    }
+                    
+                    const newItem = {
+                        ...importedItem,
+                        purchasePrice: parseFloat(importedItem.purchasePrice.toString().replace(/,/g, '')),
+                        quantity: parseInt(importedItem.quantity.toString().replace(/,/g, ''), 10),
+                        id: parseInt(importedItem.id, 10), // Already an int from itemDetails
+                        currentPrice: null
+                    };
+
+                    trackedItems.push(newItem);
+                    newItemsCount++;
+                }
+
+                if (newItemsCount > 0) {
+                    saveItems();
+                    showTableLoading();
+                    await renderItems(); // renderItems will now fetch prices, update item.currentPrice, and then update stats
+                    hideTableLoading();
+                    displayError(`Successfully imported ${newItemsCount} new item(s). ${skippedCount} item(s) skipped (not found, invalid, or already exists with same price).`);
+                } else if (skippedCount > 0 && newItemsCount === 0) {
+                    displayError(`No new items imported. ${skippedCount} item(s) skipped (not found, invalid, or already exists with same price).`);
+                } else {
+                    displayError("No new items found in the CSV to import or all items already exist.");
+                }
+            } catch (error) {
+                console.error("Error processing CSV file:", error);
+                displayError(`Error importing data: ${error.message}`);
+            }
+            importFileInput.value = ''; 
+        };
+
+        reader.onerror = () => {
+            displayError("Error reading the file.");
+            importFileInput.value = '';
+        };
+
+        reader.readAsText(file);
+    });
+
+    function parseCSV(csvString) {
+        const lines = csvString.trim().split('\n');
+        if (lines.length < 2) return []; // Expect header + at least one data row
+
+        const header = lines[0].split(',').map(h => h.trim());
+        // Match the headers from the exportData function
+        const expectedHeaders = ['Item Name', 'Purchase Price', 'Quantity', 'Total Investment'];
+        
+        // Check if all expected headers are present
+        if (!expectedHeaders.every(eh => header.includes(eh))) {
+            console.error("CSV header received:", header);
+            console.error("CSV header expected:", expectedHeaders);
+            throw new Error("CSV header does not match expected export format (Item Name, Purchase Price, Quantity, Total Investment).");
+        }
+
+        const items = [];
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',');
+            const item = {};
+            // Map values to an object using the actual header names from the CSV
+            header.forEach((colName, index) => {
+                // Only map if the column is one of the expected ones we care about for direct import
+                if (['Item Name', 'Purchase Price', 'Quantity'].includes(colName)){
+                    item[colName] = values[index] ? values[index].trim() : '';
+                }
+            });
+            // Ensure all necessary fields are present before adding
+            if (item['Item Name'] && item['Purchase Price'] && item['Quantity']) {
+                items.push(item);
+            } else {
+                console.warn("Skipping row due to missing critical data (Item Name, Purchase Price, or Quantity):", values.join(','));
+            }
+        }
+        return items;
+    }
+
+    function isValidImportedItem(item) {
+        // Validate after attempting to map to OSRS item details and generating uniqueId
+        return item.uniqueId && 
+               item.id && !isNaN(parseInt(item.id, 10)) && 
+               item.name && 
+               item.purchasePrice && !isNaN(parseFloat(item.purchasePrice.toString().replace(/,/g, ''))) && 
+               item.quantity && !isNaN(parseInt(item.quantity.toString().replace(/,/g, ''), 10)) && parseInt(item.quantity.toString().replace(/,/g, ''), 10) > 0;
+    }
+
+    // --- END IMPORT FUNCTIONALITY ---
+
+    // --- DELETE ALL FUNCTIONALITY ---
+    deleteAllBtn.addEventListener('click', async () => {
+        const confirmation = window.confirm("Are you sure you want to delete all items from your portfolio? This action cannot be undone.");
+        if (confirmation) {
+            trackedItems = [];
+            saveItems(); // Save empty array to localStorage
+            searchQuery = ''; // Reset search query
+            portfolioSearchInput.value = ''; // Clear search input
+            clearSearchBtn.style.display = 'none'; // Hide clear search button
+            showTableLoading();
+            await renderItems(); // Re-render the table (will be empty)
+                               // renderItems calls updateStatistics internally
+            hideTableLoading();
+            displayError("All items have been deleted."); // Provide feedback
+        }
+    });
+    // --- END DELETE ALL FUNCTIONALITY ---
 
     // Initial load
     loadItemMapping().then(() => {
