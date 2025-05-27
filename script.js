@@ -693,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modal open/close functions
     function openModal() {
         displayError('');
-        addItemModal.style.display = 'block';
+        addItemModal.style.display = 'flex';
         itemNameInput.focus();
         purchasePriceInput.value = '';
         quantityInput.value = '1';
@@ -719,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-quantity').value = item.quantity;
         
         displayEditError('');
-        editItemModal.style.display = 'block';
+        editItemModal.style.display = 'flex';
         document.getElementById('edit-purchase-price').focus();
     }
 
@@ -786,10 +786,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Close modals when clicking backdrop
     window.addEventListener('click', (event) => {
-        if (event.target === addItemModal || (event.target.classList.contains('modal-backdrop') && addItemModal.style.display === 'block')) {
+        if (event.target === addItemModal || (event.target.classList.contains('modal-backdrop') && addItemModal.style.display === 'flex')) {
             closeModal();
         }
-        if (event.target === editItemModal || (event.target.classList.contains('modal-backdrop') && editItemModal.style.display === 'block')) {
+        if (event.target === editItemModal || (event.target.classList.contains('modal-backdrop') && editItemModal.style.display === 'flex')) {
             closeEditModal();
         }
     });

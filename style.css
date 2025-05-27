@@ -268,6 +268,7 @@ body {
   color: var(--text-primary);
   font-size: 0.875rem;
   transition: all var(--transition-fast);
+  height: 2.75rem; /* Fixed height for consistent centering */
 }
 
 .search-container input:focus {
@@ -289,16 +290,16 @@ body {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.125rem;
   border-radius: var(--radius-sm);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1;
   transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .clear-search-btn:hover {
@@ -321,25 +322,71 @@ body {
   /* Match other secondary buttons or define specific style */
   padding: 0.75rem; /* Adjust padding for a more square/icon-focused button */
   line-height: 1; /* Helps center the icon if it's an inline element */
+  position: relative;
+  transition: all var(--transition-fast);
+}
+
+#actions-dropdown-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+#actions-dropdown-btn.open {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
 }
 
 .dropdown-content {
   display: none;
   position: absolute;
   right: 0;
-  top: calc(100% + 5px); /* Position below the button with a small gap */
-  background-color: var(--bg-secondary);
-  min-width: 200px;
-  box-shadow: var(--shadow-lg);
+  top: calc(100% + 8px); /* Position below the button with a small gap */
+  background: var(--bg-secondary);
+  min-width: 180px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   z-index: 150; /* Ensure it's above other elements in this section */
   overflow: hidden;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+  pointer-events: none;
+  transition: all var(--transition-normal);
+}
+
+.dropdown-content::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-right: none;
+  transform: rotate(45deg);
+  z-index: -1;
 }
 
 .dropdown-content.show {
   display: block;
-  animation: slideDown 0.2s ease-out;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dropdown-item-btn {
@@ -348,11 +395,17 @@ body {
   padding: 0.75rem 1rem;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
   display: flex; /* To align icon and text */
   align-items: center;
   gap: var(--spacing-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  position: relative;
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .dropdown-item-btn:last-child {
@@ -360,15 +413,34 @@ body {
 }
 
 .dropdown-item-btn:hover {
-  background-color: var(--bg-tertiary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding-left: 1.25rem;
 }
 
 .dropdown-item-btn .btn-icon {
-  font-size: 0.875rem; /* Slightly smaller icons in dropdown */
+  font-size: 1rem; /* Slightly larger icons in dropdown */
+  width: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dropdown-item-btn.btn-danger-style {
+  color: var(--error);
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.25rem;
 }
 
 .dropdown-item-btn.btn-danger-style:hover {
-    background-color: var(--accent-danger-hover) !important; /* Ensure hover for danger is distinct */
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: var(--error) !important;
+  padding-left: 1.25rem;
+}
+
+.dropdown-item-btn.btn-danger-style .btn-icon {
+  color: var(--error);
 }
 
 /* ===== BUTTONS ===== */
@@ -847,7 +919,7 @@ input::placeholder {
 
 .dropdown-list.show {
   display: block;
-  animation: slideDown 0.2s ease-out;
+  animation: dropdownSlideIn 0.2s ease-out;
 }
 
 .dropdown-item {
@@ -891,14 +963,14 @@ input::placeholder {
 }
 
 /* Dropdown animation */
-@keyframes slideDown {
-  from {
+@keyframes dropdownSlideIn {
+  0% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-10px) scale(0.95);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
