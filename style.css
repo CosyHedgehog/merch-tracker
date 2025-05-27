@@ -227,7 +227,9 @@ body {
 
 .section-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
@@ -246,7 +248,6 @@ body {
 
 .portfolio-controls {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: var(--spacing-lg);
 }

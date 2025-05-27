@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingItemId = null;
     let currentSort = { column: null, direction: 'asc' };
     let searchQuery = '';
+    let cachedLatestPrices = null; // Added to cache API responses
 
     async function fetchAPI(endpoint) {
         try {
@@ -128,14 +129,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function sortItemsWithPriceData(column, direction = 'asc') {
+    async function sortItemsWithPriceData(column, direction = 'asc', pricesData = null) {
         if (column !== 'currentPrice' && column !== 'profitLoss') {
             sortItems(column, direction);
             return;
         }
 
-        // For current price and profit/loss, we need current price data
-        const latestPricesData = await fetchAPI('latest');
+        // Use provided data, then cached data, then fetch as a last resort
+        let dataToUse = pricesData;
+        if (!dataToUse) {
+            dataToUse = cachedLatestPrices;
+        }
+        if (!dataToUse) {
+            dataToUse = await fetchAPI('latest');
+            if (dataToUse) cachedLatestPrices = dataToUse; // Cache if fetched
+        }
+        
+        const latestPricesData = dataToUse;
         
         trackedItems.sort((a, b) => {
             let aValue = 0, bValue = 0;
@@ -164,6 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             return direction === 'asc' ? aValue - bValue : bValue - aValue;
         });
+
+        if (latestPricesData && !cachedLatestPrices) { // Only cache if not already cached or provided
+            // This condition might be tricky. updateStatistics can be called with fresh or old data.
+            // Let's assume for now renderItems is the primary source for caching.
+        }
     }
 
     function getCurrentPrice(itemId, pricesData) {
@@ -464,11 +479,15 @@ document.addEventListener('DOMContentLoaded', () => {
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             itemListBody.appendChild(tr);
-            updateStatistics(null);
+            updateStatistics(null); // No data to cache here
             return;
         }
 
         const latestPricesData = await fetchAPI('latest');
+        if (latestPricesData) { // Cache the fetched data
+            cachedLatestPrices = latestPricesData;
+        }
+
         if (!latestPricesData || !latestPricesData.data) {
             if (!errorMessageP.classList.contains('active')) {
                 displayError('Could not fetch latest prices. Displaying stored data.');
@@ -815,6 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPricesBtn.classList.add('loading');
         
         try {
+            cachedLatestPrices = null; // Invalidate cache before fetching new data
             await renderItems();
         } finally {
             refreshPricesBtn.disabled = false;
@@ -927,9 +947,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to update price-dependent cells without full re-render
     async function updatePriceDependentCells() {
-        const latestPricesData = await fetchAPI('latest');
+        let dataToUse = cachedLatestPrices;
+        if (!dataToUse) {
+            dataToUse = await fetchAPI('latest');
+            if (dataToUse) {
+                cachedLatestPrices = dataToUse; // Cache if fetched
+            }
+        }
+
+        const latestPricesData = dataToUse;
         if (!latestPricesData || !latestPricesData.data) {
-            return latestPricesData;
+            return latestPricesData; // Return whatever we have, even if null/error
         }
 
         const rows = Array.from(itemListBody.querySelectorAll('tr[data-item-id]'));
@@ -1027,13 +1055,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 // For price-dependent sorting, update cells first to avoid flicker
-                let latestPricesData = null;
+                let latestPricesDataForSort = cachedLatestPrices; // Try to use cache first
                 if (needsApiData) {
-                    latestPricesData = await updatePriceDependentCells();
+                    // updatePriceDependentCells will try to use cache or fetch if needed
+                    const priceUpdateResult = await updatePriceDependentCells();
+                    // Ensure latestPricesDataForSort is the result from updatePriceDependentCells
+                    // which would be the cached or newly fetched data.
+                    latestPricesDataForSort = priceUpdateResult || cachedLatestPrices; 
                 }
                 
                 // Sort the items (now with fresh price data if needed)
-                await sortItemsWithPriceData(column, direction);
+                await sortItemsWithPriceData(column, direction, latestPricesDataForSort); 
                 
                 // Update visual indicators
                 updateSortIndicators(column, direction);
@@ -1042,14 +1074,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (trackedItems.length > 0 && itemListBody.children.length > 0) {
                     reorderTableRows();
                     
-                    // Update statistics with current data
-                    if (!latestPricesData) {
-                        latestPricesData = await fetchAPI('latest');
-                    }
-                    updateStatistics(latestPricesData);
+                    // Update statistics with current data (prefer data used for sort)
+                    updateStatistics(latestPricesDataForSort || cachedLatestPrices);
                 } else {
                     // Full re-render only if table is empty or needs to be built
-                    await renderItems(false);
+                    // renderItems will fetch if cache is null, or use cache
+                    await renderItems(false); 
                 }
             } finally {
                 if (needsApiData) {
@@ -1061,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     loadItemMapping().then(() => {
-        renderItems(false);
+        renderItems(true); // Pass true for initial load to show spinner
     }).catch(error => {
         console.error("Error during initial load:", error);
         displayError("Failed to initialize item data. Please refresh the page.");
