@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
     let itemMapping = null;
     let editingItemId = null;
+    let currentSort = { column: null, direction: 'asc' };
 
     async function fetchAPI(endpoint) {
         try {
@@ -73,6 +74,122 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function hideTableLoading() {
         tableLoadingOverlay.classList.remove('show');
+    }
+
+    function sortItems(column, direction = 'asc') {
+        trackedItems.sort((a, b) => {
+            let aValue, bValue;
+            
+            switch (column) {
+                case 'name':
+                    aValue = a.name.toLowerCase();
+                    bValue = b.name.toLowerCase();
+                    break;
+                case 'purchasePrice':
+                    aValue = a.purchasePrice;
+                    bValue = b.purchasePrice;
+                    break;
+                case 'quantity':
+                    aValue = a.quantity;
+                    bValue = b.quantity;
+                    break;
+                case 'investment':
+                    aValue = a.purchasePrice * a.quantity;
+                    bValue = b.purchasePrice * b.quantity;
+                    break;
+                case 'currentPrice':
+                    // This will be handled with current price data
+                    aValue = 0;
+                    bValue = 0;
+                    break;
+                case 'profitLoss':
+                    // This will be handled with current price data
+                    aValue = 0;
+                    bValue = 0;
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (typeof aValue === 'string') {
+                return direction === 'asc' 
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            } else {
+                return direction === 'asc' 
+                    ? aValue - bValue 
+                    : bValue - aValue;
+            }
+        });
+    }
+
+    async function sortItemsWithPriceData(column, direction = 'asc') {
+        if (column !== 'currentPrice' && column !== 'profitLoss') {
+            sortItems(column, direction);
+            return;
+        }
+
+        // For current price and profit/loss, we need current price data
+        const latestPricesData = await fetchAPI('latest');
+        
+        trackedItems.sort((a, b) => {
+            let aValue = 0, bValue = 0;
+            
+            if (latestPricesData && latestPricesData.data) {
+                if (column === 'currentPrice') {
+                    aValue = getCurrentPrice(a.id, latestPricesData.data) || 0;
+                    bValue = getCurrentPrice(b.id, latestPricesData.data) || 0;
+                } else if (column === 'profitLoss') {
+                    const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
+                    const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
+                    
+                    if (aCurrentPrice) {
+                        const aInvestment = a.purchasePrice * a.quantity;
+                        const aCurrentValue = aCurrentPrice * a.quantity;
+                        aValue = aCurrentValue - aInvestment;
+                    }
+                    
+                    if (bCurrentPrice) {
+                        const bInvestment = b.purchasePrice * b.quantity;
+                        const bCurrentValue = bCurrentPrice * b.quantity;
+                        bValue = bCurrentValue - bInvestment;
+                    }
+                }
+            }
+            
+            return direction === 'asc' ? aValue - bValue : bValue - aValue;
+        });
+    }
+
+    function getCurrentPrice(itemId, pricesData) {
+        if (!pricesData[itemId]) return null;
+        
+        const priceInfo = pricesData[itemId];
+        const currentPriceHigh = priceInfo.high;
+        const currentPriceLow = priceInfo.low;
+
+        if (currentPriceHigh !== null && currentPriceLow !== null) {
+            return Math.round((currentPriceHigh + currentPriceLow) / 2);
+        } else if (currentPriceHigh !== null) {
+            return currentPriceHigh;
+        } else if (currentPriceLow !== null) {
+            return currentPriceLow;
+        }
+        
+        return null;
+    }
+
+    function updateSortIndicators(column, direction) {
+        // Remove existing sort classes
+        document.querySelectorAll('.sortable').forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+        });
+        
+        // Add sort class to current column
+        const currentTh = document.querySelector(`[data-sort="${column}"]`);
+        if (currentTh) {
+            currentTh.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
     }
 
     let filteredItems = [];
@@ -388,6 +505,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         trackedItems.push(newItem);
         saveItems();
+        
+        // Re-apply current sort if any
+        if (currentSort.column) {
+            await sortItemsWithPriceData(currentSort.column, currentSort.direction);
+            updateSortIndicators(currentSort.column, currentSort.direction);
+        }
+        
         await renderItems(false);
 
         itemNameInput.value = '';
@@ -396,18 +520,25 @@ document.addEventListener('DOMContentLoaded', () => {
         itemNameInput.focus();
     }
 
-    function removeItemWithConfirmation(uniqueIdToRemove) {
+    async function removeItemWithConfirmation(uniqueIdToRemove) {
         const itemToRemove = trackedItems.find(item => item.uniqueId === uniqueIdToRemove);
         if (!itemToRemove) return;
 
         if (confirm(`Are you sure you want to remove "${itemToRemove.name}"?`)) {
-            removeItem(uniqueIdToRemove);
+            await removeItem(uniqueIdToRemove);
         }
     }
 
-    function removeItem(uniqueIdToRemove) {
+    async function removeItem(uniqueIdToRemove) {
         trackedItems = trackedItems.filter(item => item.uniqueId !== uniqueIdToRemove);
         saveItems();
+        
+        // Re-apply current sort if any
+        if (currentSort.column) {
+            await sortItemsWithPriceData(currentSort.column, currentSort.direction);
+            updateSortIndicators(currentSort.column, currentSort.direction);
+        }
+        
         renderItems(false);
     }
 
@@ -538,17 +669,24 @@ document.addEventListener('DOMContentLoaded', () => {
             trackedItems[itemIndex].purchasePrice = purchasePrice;
             trackedItems[itemIndex].quantity = quantity;
             saveItems();
+            
+            // Re-apply current sort if any
+            if (currentSort.column) {
+                await sortItemsWithPriceData(currentSort.column, currentSort.direction);
+                updateSortIndicators(currentSort.column, currentSort.direction);
+            }
+            
             await renderItems(false);
             closeEditModal();
         }
     });
 
-    deleteItemBtn.addEventListener('click', () => {
+    deleteItemBtn.addEventListener('click', async () => {
         if (!editingItemId) return;
         
         const item = trackedItems.find(item => item.uniqueId === editingItemId);
         if (item && confirm(`Are you sure you want to delete "${item.name}"?`)) {
-            removeItem(editingItemId);
+            await removeItem(editingItemId);
             closeEditModal();
         }
     });
@@ -619,6 +757,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!e.target.closest('.custom-dropdown')) {
             hideDropdown();
         }
+    });
+
+    // Table sorting event listeners
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', async () => {
+            const column = th.dataset.sort;
+            
+            // Determine sort direction
+            let direction = 'asc';
+            if (currentSort.column === column) {
+                direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            }
+            
+            // Update current sort state
+            currentSort = { column, direction };
+            
+            // Show loading if sorting by current price or P&L
+            const needsApiData = column === 'currentPrice' || column === 'profitLoss';
+            if (needsApiData) {
+                showTableLoading();
+            }
+            
+            try {
+                // Sort the items
+                await sortItemsWithPriceData(column, direction);
+                
+                // Update visual indicators
+                updateSortIndicators(column, direction);
+                
+                // Re-render the table
+                await renderItems(false);
+            } finally {
+                if (needsApiData) {
+                    hideTableLoading();
+                }
+            }
+        });
     });
 
     // Initial load

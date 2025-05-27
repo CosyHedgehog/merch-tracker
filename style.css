@@ -412,6 +412,39 @@ button:disabled {
   top: 0;
   z-index: 50;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  position: relative;
+}
+
+#item-table th:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+#item-table th.sort-asc::after {
+  content: '▲';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  opacity: 1;
+  color: var(--accent-primary);
+  transition: opacity var(--transition-fast);
+}
+
+#item-table th.sort-desc::after {
+  content: '▼';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  opacity: 1;
+  color: var(--accent-primary);
+  transition: opacity var(--transition-fast);
 }
 
 #item-table td {
