@@ -702,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!item) return;
 
         editingItemId = uniqueId;
-        document.getElementById('edit-item-name').value = item.name;
+        document.getElementById('edit-modal-item-name-display').textContent = item.name;
         document.getElementById('edit-purchase-price').value = item.purchasePrice;
         document.getElementById('edit-quantity').value = item.quantity;
         
