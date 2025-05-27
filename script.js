@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const statsContainer = document.getElementById('stats-container');
     const summaryItemsEl = document.getElementById('summary-items');
     const summaryPlEl = document.getElementById('summary-pl');
+    
+    // Portfolio search elements
+    const portfolioSearchInput = document.getElementById('portfolio-search');
+    const clearSearchBtn = document.getElementById('clear-search');
 
     const OSRS_API_BASE_URL = 'https://prices.runescape.wiki/api/v1/osrs';
     const OSRS_WIKI_IMG_BASE_URL = 'https://oldschool.runescape.wiki/images/';
@@ -39,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemMapping = null;
     let editingItemId = null;
     let currentSort = { column: null, direction: 'asc' };
+    let searchQuery = '';
 
     async function fetchAPI(endpoint) {
         try {
@@ -190,6 +195,118 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTh) {
             currentTh.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
         }
+    }
+
+    function getFilteredItems() {
+        if (!searchQuery.trim()) {
+            return trackedItems;
+        }
+        
+        const query = searchQuery.toLowerCase().trim();
+        return trackedItems.filter(item => 
+            item.name.toLowerCase().includes(query)
+        );
+    }
+
+    function showSearchResults() {
+        const filteredItems = getFilteredItems();
+        const tbody = itemListBody;
+        const allRows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
+        
+        // Show/hide rows based on search
+        allRows.forEach(row => {
+            const uniqueId = row.dataset.itemId;
+            const shouldShow = filteredItems.some(item => item.uniqueId === uniqueId);
+            row.style.display = shouldShow ? '' : 'none';
+        });
+        
+        // Update "no items" message for search results
+        const visibleRows = allRows.filter(row => row.style.display !== 'none');
+        const noItemsRow = tbody.querySelector('.no-items-cell');
+        
+        if (visibleRows.length === 0 && !noItemsRow) {
+            // Create "no results" message
+            const tr = document.createElement('tr');
+            tr.classList.add('search-no-results');
+            const td = document.createElement('td');
+            td.textContent = searchQuery.trim() ? `No items found matching "${searchQuery.trim()}"` : 'No items tracked yet. Add some!';
+            td.colSpan = 6;
+            td.classList.add('no-items-cell');
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        } else if (visibleRows.length > 0) {
+            // Remove "no results" message if items are visible
+            const noResultsRow = tbody.querySelector('.search-no-results');
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+        
+        // Update search statistics
+        updateSearchStatistics(filteredItems);
+    }
+
+    function updateSearchStatistics(filteredItems) {
+        // Only update statistics for visible/filtered items
+        if (searchQuery.trim()) {
+            // For search results, we need to calculate statistics from visible items only
+            updateStatisticsForItems(filteredItems);
+        } else {
+            // For all items, use the standard update
+            updateStatistics();
+        }
+    }
+
+    function updateStatisticsForItems(items) {
+        if (!items.length) {
+            totalItemsEl.textContent = '0';
+            totalInvestmentEl.textContent = '0';
+            currentValueEl.textContent = '0';
+            totalProfitLossEl.textContent = '0';
+            totalProfitLossEl.className = 'stat-value';
+            
+            summaryItemsEl.textContent = '0';
+            summaryPlEl.textContent = '0';
+            summaryPlEl.className = 'summary-pl';
+            return;
+        }
+
+        let totalInvestment = 0;
+        let totalCurrentValue = 0;
+
+        // Get current prices for calculation
+        fetchAPI('latest').then(latestPricesData => {
+            for (const item of items) {
+                const investment = item.purchasePrice * item.quantity;
+                totalInvestment += investment;
+
+                if (latestPricesData && latestPricesData.data && latestPricesData.data[item.id]) {
+                    const currentPrice = getCurrentPrice(item.id, latestPricesData.data);
+                    if (currentPrice !== null) {
+                        totalCurrentValue += currentPrice * item.quantity;
+                    } else {
+                        totalCurrentValue += investment;
+                    }
+                } else {
+                    totalCurrentValue += investment;
+                }
+            }
+
+            const totalProfitLoss = totalCurrentValue - totalInvestment;
+
+            totalItemsEl.textContent = items.length.toString();
+            totalInvestmentEl.textContent = totalInvestment.toLocaleString();
+            currentValueEl.textContent = totalCurrentValue.toLocaleString();
+            
+            totalProfitLossEl.textContent = totalProfitLoss.toLocaleString();
+            totalProfitLossEl.className = totalProfitLoss > 0 ? 'stat-value profit' : 
+                                          totalProfitLoss < 0 ? 'stat-value loss' : 'stat-value';
+
+            summaryItemsEl.textContent = items.length.toString();
+            summaryPlEl.textContent = totalProfitLoss.toLocaleString();
+            summaryPlEl.className = totalProfitLoss > 0 ? 'summary-pl profit' : 
+                                   totalProfitLoss < 0 ? 'summary-pl loss' : 'summary-pl';
+        });
     }
 
     let filteredItems = [];
@@ -364,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const item of trackedItems) {
             const tr = document.createElement('tr');
-            tr.dataset.itemId = item.id;
+            tr.dataset.itemId = item.uniqueId;
 
             function createCell(content, dataLabel) {
                 const td = document.createElement('td');
@@ -759,6 +876,135 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Function to reorder table rows without full re-render
+    function reorderTableRows() {
+        const tbody = itemListBody;
+        const rows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
+        
+        // Create a map of uniqueId to row element
+        const rowMap = new Map();
+        rows.forEach(row => {
+            const itemId = row.dataset.itemId;
+            if (itemId) {
+                rowMap.set(itemId, row);
+            }
+        });
+        
+        // Reorder rows without clearing the table
+        trackedItems.forEach((item, index) => {
+            const row = rowMap.get(item.uniqueId);
+            if (row) {
+                // Get the current position of this row
+                const currentIndex = Array.from(tbody.children).indexOf(row);
+                
+                // If the row is not in the correct position, move it
+                if (currentIndex !== index) {
+                    // Remove the row from its current position
+                    row.remove();
+                    
+                    // Insert it at the correct position
+                    if (index >= tbody.children.length) {
+                        tbody.appendChild(row);
+                    } else {
+                        tbody.insertBefore(row, tbody.children[index]);
+                    }
+                }
+            }
+        });
+        
+        // If no items, show the "no items" message
+        if (trackedItems.length === 0) {
+            tbody.innerHTML = '';
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.textContent = 'No items tracked yet. Add some!';
+            td.colSpan = 6;
+            td.classList.add('no-items-cell');
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
+    }
+
+    // Function to update price-dependent cells without full re-render
+    async function updatePriceDependentCells() {
+        const latestPricesData = await fetchAPI('latest');
+        if (!latestPricesData || !latestPricesData.data) {
+            return latestPricesData;
+        }
+
+        const rows = Array.from(itemListBody.querySelectorAll('tr[data-item-id]'));
+        
+        rows.forEach(row => {
+            const uniqueId = row.dataset.itemId;
+            const item = trackedItems.find(item => item.uniqueId === uniqueId);
+            if (!item) return;
+
+            const cells = row.querySelectorAll('td');
+            const currentPriceCell = cells[4]; // Current Price column (0-indexed)
+            const profitLossCell = cells[5]; // P&L column
+
+            // Update Current Price Cell
+            let currentPrice = null;
+            if (latestPricesData.data[item.id]) {
+                const priceInfo = latestPricesData.data[item.id];
+                const currentPriceHigh = priceInfo.high;
+                const currentPriceLow = priceInfo.low;
+
+                if (currentPriceHigh !== null && currentPriceLow !== null) {
+                    currentPrice = Math.round((currentPriceHigh + currentPriceLow) / 2);
+                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
+                } else if (currentPriceHigh !== null) {
+                    currentPrice = currentPriceHigh;
+                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
+                } else if (currentPriceLow !== null) {
+                    currentPrice = currentPriceLow;
+                    currentPriceCell.innerHTML = `<span class="currency">${currentPrice.toLocaleString()}</span>`;
+                } else {
+                    currentPriceCell.innerHTML = '<span class="text-muted">N/A</span>';
+                }
+            } else {
+                currentPriceCell.innerHTML = '<span class="text-muted">N/A</span>';
+            }
+
+            // Update P&L Cell
+            if (currentPrice !== null) {
+                const totalInvestment = item.purchasePrice * item.quantity;
+                const potentialSale = currentPrice * item.quantity;
+                const profitLoss = potentialSale - totalInvestment;
+                const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
+                profitLossCell.innerHTML = `<span class="${profitClass} currency">${profitLoss.toLocaleString()}</span>`;
+            } else {
+                profitLossCell.innerHTML = '<span class="neutral">N/A</span>';
+            }
+        });
+
+        return latestPricesData;
+    }
+
+    // Portfolio search event listeners
+    portfolioSearchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        showSearchResults();
+        
+        // Show/hide clear button
+        if (searchQuery.trim()) {
+            clearSearchBtn.style.display = 'flex';
+            portfolioSearchInput.style.paddingRight = '2.5rem';
+        } else {
+            clearSearchBtn.style.display = 'none';
+            portfolioSearchInput.style.paddingRight = '2.5rem';
+        }
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchQuery = '';
+        portfolioSearchInput.value = '';
+        clearSearchBtn.style.display = 'none';
+        portfolioSearchInput.style.paddingRight = '2.5rem';
+        showSearchResults();
+        portfolioSearchInput.focus();
+    });
+
     // Table sorting event listeners
     document.querySelectorAll('.sortable').forEach(th => {
         th.addEventListener('click', async () => {
@@ -780,14 +1026,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             try {
-                // Sort the items
+                // For price-dependent sorting, update cells first to avoid flicker
+                let latestPricesData = null;
+                if (needsApiData) {
+                    latestPricesData = await updatePriceDependentCells();
+                }
+                
+                // Sort the items (now with fresh price data if needed)
                 await sortItemsWithPriceData(column, direction);
                 
                 // Update visual indicators
                 updateSortIndicators(column, direction);
                 
-                // Re-render the table
-                await renderItems(false);
+                // Reorder existing table rows instead of full re-render
+                if (trackedItems.length > 0 && itemListBody.children.length > 0) {
+                    reorderTableRows();
+                    
+                    // Update statistics with current data
+                    if (!latestPricesData) {
+                        latestPricesData = await fetchAPI('latest');
+                    }
+                    updateStatistics(latestPricesData);
+                } else {
+                    // Full re-render only if table is empty or needs to be built
+                    await renderItems(false);
+                }
             } finally {
                 if (needsApiData) {
                     hideTableLoading();

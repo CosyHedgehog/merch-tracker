@@ -132,19 +132,25 @@
             <section class="items-section">
                 <div class="section-header">
                     <h2>Your Portfolio</h2>
-                    <div class="section-actions">
-                        <button id="export-btn" class="btn-secondary">
-                            <span class="btn-icon">📁</span>
-                            Export
-                        </button>
-                        <button id="refresh-prices-btn" class="btn-secondary">
-                            <span class="btn-icon">🔄</span>
-                            Refresh
-                        </button>
-                        <button id="show-add-item-modal-btn" class="btn-primary">
-                            <span class="btn-icon">+</span>
-                            Add
-                        </button>
+                    <div class="portfolio-controls">
+                        <div class="search-container">
+                            <input type="text" id="portfolio-search" placeholder="🔍 Search items..." autocomplete="off">
+                            <button id="clear-search" class="clear-search-btn" style="display: none;">&times;</button>
+                        </div>
+                        <div class="section-actions">
+                            <button id="export-btn" class="btn-secondary">
+                                <span class="btn-icon">📁</span>
+                                Export
+                            </button>
+                            <button id="refresh-prices-btn" class="btn-secondary">
+                                <span class="btn-icon">🔄</span>
+                                Refresh
+                            </button>
+                            <button id="show-add-item-modal-btn" class="btn-primary">
+                                <span class="btn-icon">+</span>
+                                Add
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
