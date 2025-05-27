@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSort = { column: null, direction: 'asc' };
     let searchQuery = '';
     let cachedLatestPrices = null; // Added to cache API responses
+    let searchDebounceTimer = null; // For debouncing search statistics update
 
     async function fetchAPI(endpoint) {
         try {
@@ -240,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    function showSearchResults() {
+    function filterTableRowsVisual() {
         const filteredItems = getFilteredItems();
         const tbody = itemListBody;
         const allRows = Array.from(tbody.querySelectorAll('tr[data-item-id]'));
@@ -273,19 +274,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 noResultsRow.remove();
             }
         }
-        
-        // Update search statistics
-        updateSearchStatistics(filteredItems);
     }
 
-    function updateSearchStatistics(filteredItems) {
-        // Only update statistics for visible/filtered items
+    function updateSearchStatistics(itemsToStat) {
         if (searchQuery.trim()) {
-            // For search results, we need to calculate statistics from visible items only
-            updateStatisticsForItems(filteredItems);
+            updateStatisticsForItems(itemsToStat); // Use the provided (filtered) items
         } else {
-            // For all items, use the standard update
-            updateStatistics();
+            updateStatistics(); // Update with all trackedItems (search is clear)
         }
     }
 
@@ -306,7 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalInvestment = 0;
         let totalCurrentValue = 0;
 
-        // Get current prices for calculation
+        // Get current prices for calculation - this might be slightly delayed if API is hit
+        // Consider if this needs to be more immediate or if cachedLatestPrices should be preferred.
+        // For debounced search, fetching here is okay.
         fetchAPI('latest').then(latestPricesData => {
             for (const item of items) {
                 const investment = item.purchasePrice * item.quantity;
@@ -317,9 +314,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (currentPrice !== null) {
                         totalCurrentValue += currentPrice * item.quantity;
                     } else {
-                        totalCurrentValue += investment;
+                        // If current price is not available, use purchase price for current value (neutral P&L for this item)
+                        totalCurrentValue += investment; 
                     }
                 } else {
+                    // If item not in price data, use purchase price for current value
                     totalCurrentValue += investment;
                 }
             }
@@ -338,6 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryPlEl.textContent = formatCurrency(totalProfitLoss);
             summaryPlEl.className = totalProfitLoss > 0 ? 'summary-pl profit' : 
                                    totalProfitLoss < 0 ? 'summary-pl loss' : 'summary-pl';
+        }).catch(error => {
+            console.error("Error updating stats for items:", error);
+            // Potentially display a muted error or rely on N/A values in table
         });
     }
 
@@ -603,6 +605,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const remaining = Math.max(0, 1000 - elapsed);
             await new Promise(resolve => setTimeout(resolve, remaining));
             hideTableLoading();
+        }
+
+        // After rendering all items, update statistics based on current search state
+        if (searchQuery.trim()) {
+            updateSearchStatistics(getFilteredItems());
+        } else {
+            await updateStatistics(); // This uses item.currentPrice from trackedItems, which is now fresh
         }
     }
 
@@ -1011,16 +1020,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Portfolio search event listeners
     portfolioSearchInput.addEventListener('input', async () => {
         searchQuery = portfolioSearchInput.value;
-        showSearchResults();
-        await updateStatistics(); // Ensure stats are updated after search
+        filterTableRowsVisual(); // Instant visual update of table rows
         clearSearchBtn.style.display = searchQuery ? 'block' : 'none';
+
+        // Debounce the statistics update
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(async () => {
+            updateSearchStatistics(getFilteredItems());
+        }, 500); // Adjust delay as needed (e.g., 500ms)
     });
 
     clearSearchBtn.addEventListener('click', async () => {
+        clearTimeout(searchDebounceTimer); // Clear any pending debounced update
         portfolioSearchInput.value = '';
         searchQuery = ''; // Explicitly clear searchQuery global
-        showSearchResults(); // Show all items
-        await updateStatistics(); // Ensure stats are updated after clearing search
+        filterTableRowsVisual(); // Show all items visually
+        // Immediately update statistics for the unfiltered view
+        updateSearchStatistics(getFilteredItems()); // This will call updateStatistics() because searchQuery is empty
         clearSearchBtn.style.display = 'none';
         portfolioSearchInput.focus(); // Optional: return focus to search bar
     });
