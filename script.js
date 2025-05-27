@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Delete All element
     const deleteAllBtn = document.getElementById('delete-all-btn');
 
+    // Actions Dropdown elements
+    const actionsDropdownBtn = document.getElementById('actions-dropdown-btn');
+    const actionsDropdownContent = document.getElementById('actions-dropdown-content');
+
     const OSRS_API_BASE_URL = 'https://prices.runescape.wiki/api/v1/osrs';
     const OSRS_WIKI_IMG_BASE_URL = 'https://oldschool.runescape.wiki/images/';
     const USER_AGENT = 'merch_tracker_app - YOUR_DISCORD_OR_EMAIL'; // PLEASE REPLACE WITH ACTUAL CONTACT
@@ -838,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshPricesBtn.addEventListener('click', async () => {
         displayError('');
         refreshPricesBtn.disabled = true;
-        refreshPricesBtn.innerHTML = '<span class="btn-icon">⏳</span>Refreshing...';
+        refreshPricesBtn.innerHTML = '<span class="btn-icon">⏳</span>Refresh';
         refreshPricesBtn.classList.add('loading');
         
         try {
@@ -901,6 +905,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.custom-dropdown')) {
             hideDropdown();
+        }
+        // Close actions dropdown if clicked outside
+        if (actionsDropdownBtn && actionsDropdownContent && !actionsDropdownBtn.contains(e.target) && !actionsDropdownContent.contains(e.target)) {
+            if (actionsDropdownContent.classList.contains('show')) {
+                actionsDropdownContent.classList.remove('show');
+                actionsDropdownBtn.classList.remove('open');
+            }
         }
     });
 
@@ -1298,6 +1309,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // --- END DELETE ALL FUNCTIONALITY ---
+
+    // --- ACTIONS DROPDOWN FUNCTIONALITY ---
+    if (actionsDropdownBtn && actionsDropdownContent) {
+        actionsDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent the document click listener from immediately closing it
+            const isShown = actionsDropdownContent.classList.toggle('show');
+            actionsDropdownBtn.classList.toggle('open', isShown);
+        });
+
+        // Close dropdown if an item inside is clicked
+        actionsDropdownContent.addEventListener('click', (e) => {
+            if (e.target.closest('.dropdown-item-btn')) {
+                actionsDropdownContent.classList.remove('show');
+                actionsDropdownBtn.classList.remove('open');
+            }
+        });
+    }
+    // --- END ACTIONS DROPDOWN FUNCTIONALITY ---
 
     // Initial load
     loadItemMapping().then(() => {

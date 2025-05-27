@@ -60,6 +60,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll; /* Always show vertical scrollbar to prevent jolt */
 }
 
 body {
@@ -309,6 +310,65 @@ body {
   display: flex;
   gap: var(--spacing-md);
   flex-shrink: 0;
+}
+
+/* Styling for the new Actions Dropdown */
+.actions-dropdown {
+  position: relative;
+}
+
+#actions-dropdown-btn {
+  /* Match other secondary buttons or define specific style */
+  padding: 0.75rem; /* Adjust padding for a more square/icon-focused button */
+  line-height: 1; /* Helps center the icon if it's an inline element */
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 5px); /* Position below the button with a small gap */
+  background-color: var(--bg-secondary);
+  min-width: 200px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  z-index: 150; /* Ensure it's above other elements in this section */
+  overflow: hidden;
+}
+
+.dropdown-content.show {
+  display: block;
+  animation: slideDown 0.2s ease-out;
+}
+
+.dropdown-item-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex; /* To align icon and text */
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.dropdown-item-btn:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item-btn:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.dropdown-item-btn .btn-icon {
+  font-size: 0.875rem; /* Slightly smaller icons in dropdown */
+}
+
+.dropdown-item-btn.btn-danger-style:hover {
+    background-color: var(--accent-danger-hover) !important; /* Ensure hover for danger is distinct */
 }
 
 /* ===== BUTTONS ===== */
@@ -610,15 +670,18 @@ button:disabled {
 
 /* ===== MODAL ===== */
 .modal {
-  display: none;
+  display: none; /* Will be changed to display: flex by JS */
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   z-index: 1000;
-  overflow-y: auto;
-  padding: var(--spacing-lg);
+  overflow-y: auto; /* Allow scrolling for modal content if it's too tall */
+  padding: var(--spacing-lg); /* Padding for the overall modal area */
+  /* Flexbox properties for centering the .modal-content */
+  align-items: center; /* Vertical centering */
+  justify-content: center; /* Horizontal centering */
 }
 
 .modal-backdrop {
@@ -633,15 +696,17 @@ button:disabled {
 }
 
 .modal-content {
-  position: relative;
+  position: relative; /* Keep this for z-index stacking if needed */
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
   max-width: 500px;
-  margin: 5vh auto;
+  margin: var(--spacing-md); /* Let flexbox handle centering, this provides spacing from viewport edges if modal is large */
   box-shadow: var(--shadow-xl);
-  z-index: 1001;
-  overflow: hidden;
+  z-index: 1001; /* Ensure modal content is above backdrop */
+  overflow: hidden; /* For rounded corners on internal content */
+  max-height: calc(100vh - (2 * var(--spacing-md))); /* Ensure modal doesn't exceed viewport height with margin */
+  overflow-y: auto; /* Allow internal scrolling for modal content if it's too tall */
 }
 
 .modal-header {

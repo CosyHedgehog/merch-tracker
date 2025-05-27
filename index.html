@@ -134,23 +134,30 @@
                             <button id="clear-search" class="clear-search-btn" style="display: none;">&times;</button>
                         </div>
                         <div class="section-actions">
-                            <button id="import-btn" class="btn-secondary">
-                                <span class="btn-icon">📄</span>
-                                Import
-                            </button>
-                            <input type="file" id="import-file-input" accept=".csv" style="display: none;">
-                            <button id="delete-all-btn" class="btn-secondary btn-danger-style">
-                                <span class="btn-icon">🗑️</span>
-                                Delete All
-                            </button>
-                            <button id="export-btn" class="btn-secondary">
-                                <span class="btn-icon">📁</span>
-                                Export
-                            </button>
-                            <button id="refresh-prices-btn" class="btn-secondary">
-                                <span class="btn-icon">🔄</span>
-                                Refresh
-                            </button>
+                            <div class="actions-dropdown">
+                                <button id="actions-dropdown-btn" class="btn-secondary">
+                                    <span class="btn-icon">⚙️</span>
+                                </button>
+                                <div id="actions-dropdown-content" class="dropdown-content">
+                                    <button id="refresh-prices-btn" class="btn-secondary dropdown-item-btn">
+                                        <span class="btn-icon">🔄</span>
+                                        Refresh
+                                    </button>
+                                    <button id="import-btn" class="btn-secondary dropdown-item-btn">
+                                        <span class="btn-icon">📄</span>
+                                        Import
+                                    </button>
+                                    <input type="file" id="import-file-input" accept=".csv" style="display: none;">
+                                    <button id="export-btn" class="btn-secondary dropdown-item-btn">
+                                        <span class="btn-icon">📁</span>
+                                        Export
+                                    </button>
+                                    <button id="delete-all-btn" class="btn-secondary btn-danger-style dropdown-item-btn">
+                                        <span class="btn-icon">🗑️</span>
+                                        Delete All
+                                    </button>
+                                </div>
+                            </div>
                             <button id="show-add-item-modal-btn" class="btn-primary">
                                 <span class="btn-icon">+</span>
                                 Add
