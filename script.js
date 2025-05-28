@@ -826,6 +826,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             await renderItems(false);
             closeEditModal();
+
+            // Re-apply search filter and update stats if a search query exists
+            if (searchQuery.trim()) {
+                filterTableRowsVisual();
+                updateSearchStatistics(getFilteredItems());
+            }
         }
     });
 
