@@ -1440,7 +1440,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add a banner or indicator
         const readOnlyBanner = document.createElement('div');
-        readOnlyBanner.textContent = 'Viewing a shared portfolio (Read-Only)';
         readOnlyBanner.style.textAlign = 'center';
         readOnlyBanner.style.padding = 'var(--spacing-sm)';
         readOnlyBanner.style.background = 'var(--accent-primary)';
@@ -1448,6 +1447,18 @@ document.addEventListener('DOMContentLoaded', () => {
         readOnlyBanner.style.fontWeight = 'bold';
         readOnlyBanner.style.borderRadius = 'var(--radius-md)';
         readOnlyBanner.style.margin = 'var(--spacing-md) 0';
+        
+        const bannerText = document.createElement('span');
+        bannerText.textContent = 'Viewing a shared portfolio (Read-Only). ';
+        
+        const portfolioLink = document.createElement('a');
+        portfolioLink.href = window.location.origin + window.location.pathname;
+        portfolioLink.textContent = 'View your portfolio';
+        portfolioLink.style.color = 'white'; // Ensure link is visible on banner background
+        portfolioLink.style.textDecoration = 'underline';
+
+        readOnlyBanner.appendChild(bannerText);
+        readOnlyBanner.appendChild(portfolioLink);
         
         const mainContainer = document.querySelector('.app-main');
         if (mainContainer && mainContainer.firstChild) {
