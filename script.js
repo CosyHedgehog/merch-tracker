@@ -46,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionsDropdownBtn = document.getElementById('actions-dropdown-btn');
     const actionsDropdownContent = document.getElementById('actions-dropdown-content');
 
+    // Shareable Link element
+    const shareBtn = document.getElementById('share-btn');
+
     const OSRS_API_BASE_URL = 'https://prices.runescape.wiki/api/v1/osrs';
     const OSRS_WIKI_IMG_BASE_URL = 'https://oldschool.runescape.wiki/images/';
     const USER_AGENT = 'merch_tracker_app - YOUR_DISCORD_OR_EMAIL'; // PLEASE REPLACE WITH ACTUAL CONTACT
@@ -67,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchQuery = '';
     let cachedLatestPrices = null; // Added to cache API responses
     let searchDebounceTimer = null; // For debouncing search statistics update
+    let isReadOnlyMode = false; // Flag for read-only mode from shared link
 
     async function fetchAPI(endpoint) {
         try {
@@ -415,6 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveItems() {
+        if (isReadOnlyMode) return; // Don't save if in read-only mode
         localStorage.setItem('osrsMerchItems', JSON.stringify(trackedItems));
     }
 
@@ -449,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (totalProfitLoss < 0) {
             totalProfitLossEl.classList.add('loss');
         } else {
-            totalProfitLossEl.classList.add('neutral');
+            totalProfitLossEl.classList.add('neutral'); 
         }
         
         summaryItemsEl.textContent = itemsCount.toLocaleString();
@@ -598,7 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tr.appendChild(profitLossCell);
 
-            tr.addEventListener('click', () => openEditModal(item.uniqueId));
+            if (!isReadOnlyMode) { // Only add click listener if not in read-only mode
+                tr.addEventListener('click', () => openEditModal(item.uniqueId));
+            }
             itemListBody.appendChild(tr);
         }
         
@@ -842,6 +849,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item && confirm(`Are you sure you want to delete "${item.name}"?`)) {
             await removeItem(editingItemId);
             closeEditModal();
+        } else if (isReadOnlyMode) {
+            alert("This is a read-only view. Deleting items is disabled.");
         }
     });
 
@@ -1128,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // If error message is not active, then close modal after adding item.
                 // Simulating the button click will also trigger the closeModal if no error.
-                addItemBtn.click(); 
+                if (!isReadOnlyMode) addItemBtn.click(); 
             }
         });
     });
@@ -1141,13 +1150,17 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                saveItemBtn.click();
+                if (!isReadOnlyMode) saveItemBtn.click();
             }
         });
     });
 
     // --- IMPORT FUNCTIONALITY ---
     importBtn.addEventListener('click', () => {
+        if (isReadOnlyMode) {
+            alert("This is a read-only view. Importing data is disabled.");
+            return;
+        }
         importFileInput.click(); // Trigger hidden file input
     });
 
@@ -1300,6 +1313,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DELETE ALL FUNCTIONALITY ---
     deleteAllBtn.addEventListener('click', async () => {
+        if (isReadOnlyMode) {
+            alert("This is a read-only view. Deleting all items is disabled.");
+            return;
+        }
         const confirmation = window.confirm("Are you sure you want to delete all items from your portfolio? This action cannot be undone.");
         if (confirmation) {
             trackedItems = [];
@@ -1334,9 +1351,148 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // --- END ACTIONS DROPDOWN FUNCTIONALITY ---
 
+    // --- SHAREABLE LINK FUNCTIONALITY ---
+    function generateShareableLink() {
+        if (!trackedItems.length) {
+            alert("Your portfolio is empty. Add some items to share!");
+            return;
+        }
+
+        // Create a simplified version of items for the link to keep it shorter
+        const itemsToShare = trackedItems.map(item => ({
+            i: item.id,         // item ID
+            p: item.purchasePrice, // purchase price
+            q: item.quantity    // quantity
+        }));
+
+        const data = JSON.stringify(itemsToShare);
+        const encodedData = btoa(data); // Base64 encode
+        const shareLink = `${window.location.origin}${window.location.pathname}?shared=${encodedData}`;
+
+        navigator.clipboard.writeText(shareLink).then(() => {
+            alert("Shareable link copied to clipboard!");
+        }).catch(err => {
+            console.error('Failed to copy link: ', err);
+            alert("Failed to copy link. You can manually copy it from the console or try again.");
+            prompt("Copy this link:", shareLink); // Fallback for browsers that don't support clipboard API well or in non-secure contexts
+        });
+    }
+
+    async function loadFromShareableLink(encodedData) {
+        try {
+            const decodedData = atob(encodedData); // Base64 decode
+            const sharedItemsData = JSON.parse(decodedData);
+
+            if (!Array.isArray(sharedItemsData)) {
+                throw new Error("Invalid shared data format.");
+            }
+
+            await loadItemMapping(); // Ensure itemMapping is loaded
+            if (!itemMapping) {
+                displayError("Failed to load item mapping. Cannot display shared portfolio.");
+                return;
+            }
+            
+            const itemsFromLink = [];
+            for (const sharedItem of sharedItemsData) {
+                // Find the full item details from our itemMapping using the ID
+                const fullItemDetails = Object.values(itemMapping).find(mapItem => mapItem.id === sharedItem.i);
+                if (fullItemDetails) {
+                    itemsFromLink.push({
+                        uniqueId: `shared-${fullItemDetails.id}-${Math.random().toString(36).substr(2, 5)}`, // Generate a unique ID for rendering
+                        id: fullItemDetails.id,
+                        name: fullItemDetails.name,
+                        purchasePrice: sharedItem.p,
+                        quantity: sharedItem.q,
+                        icon: fullItemDetails.icon,
+                        currentPrice: null // Will be fetched by renderItems
+                    });
+                } else {
+                    console.warn(`Item ID ${sharedItem.i} from shared link not found in mapping.`);
+                }
+            }
+            trackedItems = itemsFromLink;
+            isReadOnlyMode = true;
+            enterReadOnlyMode();
+            await renderItems(true); // Render the shared items
+
+        } catch (error) {
+            console.error("Error loading from shareable link:", error);
+            alert("Could not load the shared portfolio. The link might be corrupted or invalid.");
+            // Fallback to normal loading if shared link is bad
+            trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
+            await renderItems(true);
+        }
+    }
+
+    function enterReadOnlyMode() {
+        // Hide or disable interactive elements
+        if (showAddItemModalBtn) showAddItemModalBtn.style.display = 'none';
+        if (actionsDropdownBtn) {
+             // Hide specific dropdown items instead of the whole button for clarity
+            if (importBtn) importBtn.style.display = 'none';
+            if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+            if (shareBtn) shareBtn.style.display = 'none'; // Can't re-share a shared view
+        }
+        
+        // Disable portfolio search input if it makes sense for read-only
+        // if (portfolioSearchInput) portfolioSearchInput.disabled = true;
+
+        // Add a banner or indicator
+        const readOnlyBanner = document.createElement('div');
+        readOnlyBanner.textContent = 'Viewing a shared portfolio (Read-Only)';
+        readOnlyBanner.style.textAlign = 'center';
+        readOnlyBanner.style.padding = 'var(--spacing-sm)';
+        readOnlyBanner.style.background = 'var(--accent-primary)';
+        readOnlyBanner.style.color = 'white';
+        readOnlyBanner.style.fontWeight = 'bold';
+        readOnlyBanner.style.borderRadius = 'var(--radius-md)';
+        readOnlyBanner.style.margin = 'var(--spacing-md) 0';
+        
+        const mainContainer = document.querySelector('.app-main');
+        if (mainContainer && mainContainer.firstChild) {
+            mainContainer.insertBefore(readOnlyBanner, mainContainer.firstChild);
+        } else if (mainContainer) {
+            mainContainer.appendChild(readOnlyBanner);
+        }
+
+        // Adjust .items-section max-height to account for the banner
+        if (readOnlyBanner.offsetHeight > 0) {
+            const itemsSection = document.querySelector('.items-section');
+            if (itemsSection) {
+                const bannerHeight = readOnlyBanner.offsetHeight;
+                const bannerComputedStyle = getComputedStyle(readOnlyBanner);
+                const bannerMarginTop = parseFloat(bannerComputedStyle.marginTop);
+                const bannerMarginBottom = parseFloat(bannerComputedStyle.marginBottom);
+                const totalBannerSpace = bannerHeight + bannerMarginTop + bannerMarginBottom;
+                
+                document.documentElement.style.setProperty('--banner-height-adjustment', `${totalBannerSpace}px`);
+                document.body.classList.add('read-only-active');
+            }
+        }
+
+        // Prevent modals from opening (though buttons are hidden, good for safety)
+        // AddItemModal will not open because its button is hidden.
+        // EditItemModal is triggered by row click, that needs to be disabled too.
+        // This is handled in renderItems by not adding the event listener.
+    }
+
+    if (shareBtn) {
+        shareBtn.addEventListener('click', generateShareableLink);
+    }
+    // --- END SHAREABLE LINK FUNCTIONALITY ---
+
     // Initial load
-    loadItemMapping().then(() => {
-        renderItems(true); // Pass true for initial load to show spinner
+    loadItemMapping().then(async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedData = urlParams.get('shared');
+
+        if (sharedData) {
+            await loadFromShareableLink(sharedData);
+        } else {
+            trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
+            await renderItems(true); // Pass true for initial load to show spinner
+        }
     }).catch(error => {
         console.error("Error during initial load:", error);
         displayError("Failed to initialize item data. Please refresh the page.");

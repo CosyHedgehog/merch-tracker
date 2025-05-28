@@ -226,6 +226,10 @@ body {
   max-height: calc(100vh - 150px); /* Ensure section doesn't exceed viewport */
 }
 
+.read-only-active .items-section {
+  max-height: calc(100vh - 150px - var(--banner-height-adjustment, 0px));
+}
+
 .section-header {
   display: flex;
   flex-direction: row;
@@ -1066,6 +1070,10 @@ input::placeholder {
 
   .items-section {
     max-height: calc(100vh - 100px);
+  }
+  
+  .read-only-active .items-section {
+    max-height: calc(100vh - 100px - var(--banner-height-adjustment, 0px));
   }
   
   .section-actions {
