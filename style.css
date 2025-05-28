@@ -328,15 +328,17 @@ body {
   line-height: 1; /* Helps center the icon if it's an inline element */
   position: relative;
   transition: all var(--transition-fast);
+  background: var(--bg-tertiary);
 }
 
 #actions-dropdown-btn:hover {
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: var(--shadow-md);
+  background: var(--bg-card);
 }
 
 #actions-dropdown-btn.open {
-  background: var(--accent-primary);
+  /* background: var(--accent-primary); */
   color: white;
   border-color: var(--accent-primary);
 }
@@ -345,16 +347,16 @@ body {
   display: none;
   position: absolute;
   right: 0;
-  top: calc(100% + 8px); /* Position below the button with a small gap */
+  top: calc(100% + 5px); /* Position below the button with a small gap */
   background: var(--bg-secondary);
-  min-width: 180px;
+  min-width: 170px; /* Increased from 100px */
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   z-index: 150; /* Ensure it's above other elements in this section */
   overflow: hidden;
   opacity: 0;
-  transform: translateY(-10px) scale(0.95);
+  /* transform: translateY(-10px) scale(0.95); */
   pointer-events: none;
   transition: all var(--transition-normal);
 }
@@ -377,9 +379,9 @@ body {
 .dropdown-content.show {
   display: block;
   opacity: 1;
-  transform: translateY(0) scale(1);
+  /* transform: translateY(0) scale(1); */
   pointer-events: auto;
-  animation: dropdownSlideIn 0.2s ease-out;
+  /* animation: dropdownSlideIn 0.2s ease-out; */
 }
 
 @keyframes dropdownSlideIn {
@@ -435,9 +437,6 @@ body {
   border-top: 1px solid var(--border-color);
 }
 
-.dropdown-item-btn.btn-danger-style:hover {
-  padding-left: 1.25rem;
-}
 
 .dropdown-item-btn.btn-danger-style .btn-icon {
   color: var(--error);
@@ -476,13 +475,13 @@ button {
 #add-item-btn:hover,
 #show-add-item-modal-btn:hover {
   background: var(--accent-primary-hover);
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: var(--shadow-md);
 }
 
 .btn-secondary,
 #refresh-prices-btn {
-  background: var(--bg-tertiary);
+  /* background: var(--bg-tertiary); */
   color: var(--text-primary);
   /* border: 1px solid var(--border-color); */
 }
@@ -491,7 +490,7 @@ button {
 #refresh-prices-btn:hover {
   background: var(--border-color);
   border-color: var(--border-hover);
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
 }
 
 .remove-btn {
@@ -514,7 +513,7 @@ button {
 .btn-danger-style:hover {
   background-color: var(--accent-danger-hover);
   border-color: var(--accent-danger-hover);
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: var(--shadow-md);
 }
 
