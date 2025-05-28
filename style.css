@@ -702,6 +702,27 @@ button:disabled {
   font-size: 1rem;
 }
 
+/* Styling for the wiki link icon */
+.wiki-link-icon {
+  margin-left: var(--spacing-xs); /* Use theme variable for spacing */
+  text-decoration: none;
+  color: var(--text-muted); /* Use a muted color for the icon */
+  font-size: 0.9em; /* Slightly smaller than item name */
+  transition: color var(--transition-fast), opacity var(--transition-fast); /* Added opacity transition */
+  display: inline-flex; /* Helps with alignment */
+  align-items: center;
+  opacity: 0; /* Hidden by default */
+}
+
+#item-table tbody tr:hover .wiki-link-icon {
+  opacity: 1; /* Show on row hover */
+}
+
+.wiki-link-icon:hover {
+  color: var(--accent-secondary); /* Highlight on hover */
+  text-decoration: none; /* Ensure no underline on hover */
+}
+
 /* Number formatting */
 .currency {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -1188,6 +1209,11 @@ input::placeholder {
     font-size: 0.9rem; /* Match other values */
     font-weight: 600;  /* Emphasize item name slightly */
   }
+
+  /* Always show wiki link icon on mobile */
+  .wiki-link-icon {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1203,6 +1229,25 @@ input::placeholder {
   
   .stat-content {
     text-align: center;
+  }
+  
+  /* Special handling for the item cell (icon and name) */
+  #item-table td[data-label="Item"] {
+    /* text-align: left; */ /* Keep this, but allow content within to be right-aligned */
+  }
+  
+  .item-cell { /* This is the div INSIDE td[data-label="Item"] */
+    justify-content: flex-end; /* Align icon, name, and wiki link to the right */
+  }
+
+  .item-icon {
+    width: 28px; /* Slightly smaller */
+    height: 28px;
+  }
+
+  .item-name {
+    font-size: 0.9rem; /* Match other values */
+    font-weight: 600;  /* Emphasize item name slightly */
   }
 }
 

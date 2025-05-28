@@ -562,12 +562,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 iconImg.classList.add('item-icon');
             }
             
-            const itemName = document.createElement('span');
-            itemName.classList.add('item-name');
-            itemName.textContent = item.name;
+            const itemNameSpan = document.createElement('span');
+            itemNameSpan.classList.add('item-name');
+            itemNameSpan.textContent = item.name;
+
+            const wikiLinkIcon = document.createElement('a');
+            wikiLinkIcon.classList.add('wiki-link-icon');
+            wikiLinkIcon.href = `https://prices.runescape.wiki/osrs/item/${item.id}`;
+            wikiLinkIcon.target = '_blank';
+            wikiLinkIcon.rel = 'noopener noreferrer';
+            wikiLinkIcon.innerHTML = '🔗'; // Link icon
+            wikiLinkIcon.title = `View ${item.name} on OSRS Wiki`;
+            // Basic inline styles, can be enhanced in CSS file
+            wikiLinkIcon.style.marginLeft = '8px'; 
+            wikiLinkIcon.style.textDecoration = 'none';
             
             itemContainer.appendChild(iconImg);
-            itemContainer.appendChild(itemName);
+            itemContainer.appendChild(itemNameSpan); // Add item name span
+            itemContainer.appendChild(wikiLinkIcon); // Add wiki link icon
             itemCell.appendChild(itemContainer);
             tr.appendChild(itemCell);
 
@@ -604,7 +616,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.appendChild(profitLossCell);
 
             if (!isReadOnlyMode) { // Only add click listener if not in read-only mode
-                tr.addEventListener('click', () => openEditModal(item.uniqueId));
+                tr.addEventListener('click', (event) => {
+                    // Prevent opening edit modal if the click was on the wiki link icon
+                    if (event.target.closest('a.wiki-link-icon')) {
+                        return;
+                    }
+                    openEditModal(item.uniqueId);
+                });
             }
             itemListBody.appendChild(tr);
         }
