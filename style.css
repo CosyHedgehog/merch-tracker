@@ -78,7 +78,7 @@ body {
 /* ===== MAIN LAYOUT ===== */
 .app-main {
   padding: var(--spacing-lg);
-  max-width: 1400px;
+  max-width: 1250px;
   margin: 0 auto;
 }
 

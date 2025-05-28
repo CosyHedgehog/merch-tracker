@@ -604,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.appendChild(currentPriceCell);
 
             // Profit/Loss Cell - uses item.currentPrice directly now
-            const profitLossCell = createCell('', 'P&L');
+            const profitLossCell = createCell('', 'Profit');
             if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
                 const potentialSale = item.currentPrice * item.quantity;
                 const profitLoss = potentialSale - totalInvestmentForItem;
