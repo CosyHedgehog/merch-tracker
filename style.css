@@ -1040,18 +1040,24 @@ input::placeholder {
   }
   
   .section-header {
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    align-items: stretch;
+    flex-direction: row; /* Changed from column */
+    align-items: center; /* Changed from stretch */
+    justify-content: space-between; /* Added */
+    gap: var(--spacing-sm); /* Maintained, now for horizontal spacing */
     padding: var(--spacing-md);
     position: sticky;
     top: 0;
     z-index: 100;
   }
 
+  .section-header h2 {
+    flex-shrink: 0; /* Prevent title from shrinking */
+  }
+
   .portfolio-controls {
-    flex-direction: column;
-    gap: var(--spacing-sm);
+    flex-direction: row; /* Changed from column */
+    align-items: center; /* Added */
+    gap: var(--spacing-sm); /* Maintained, now for horizontal spacing */
   }
 
   .modal-header,
@@ -1061,24 +1067,23 @@ input::placeholder {
 
   .search-container {
     max-width: none;
-    order: 2;
+    order: initial; /* Changed from 2 */
+    flex-grow: 1; /* Allow search to take available space */
   }
 
   .section-actions {
-    order: 1;
+    order: initial; /* Changed from 1 */
+    flex-wrap: nowrap; /* Changed from wrap to keep buttons on one line */
+    gap: var(--spacing-sm); /* Maintained from mobile-specific styles */
+    flex-shrink: 0; /* Ensure buttons container doesn't shrink */
   }
 
   .items-section {
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 80px);
   }
   
   .read-only-active .items-section {
     max-height: calc(100vh - 100px - var(--banner-height-adjustment, 0px));
-  }
-  
-  .section-actions {
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
   }
   
   .section-actions button {
@@ -1126,20 +1131,23 @@ input::placeholder {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-sm);
-    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md); /* Increased */
+    padding: var(--spacing-md);      /* Increased */
     position: relative;
   }
   
   #item-table td {
     border: none;
     border-bottom: 1px solid var(--border-color);
-    padding: var(--spacing-xs) 0;
-    padding-left: 40%;
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    padding-right: var(--spacing-sm); /* Right padding for the value */
+    padding-left: calc(var(--spacing-md) + 35% + var(--spacing-md)); 
     position: relative;
-    text-align: center;
-    font-size: 1rem;
+    text-align: right; /* Default to right-align values */
+    font-size: 0.9rem; /* Adjusted for space */
     font-weight: 500;
+    min-height: 2.2rem; /* Consistent cell height */
   }
   
   #item-table td:last-child {
@@ -1149,20 +1157,36 @@ input::placeholder {
   #item-table td::before {
     content: attr(data-label);
     position: absolute;
-    left: 0;
-    width: 35%;
-    padding-right: var(--spacing-sm);
+    left: var(--spacing-md); /* Align with card padding */
+    top: 50%;
+    transform: translateY(-50%); /* Vertical centering */
+    width: 35%; /* Label width */
     text-align: left;
     font-weight: 600;
     color: var(--text-secondary);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    white-space: nowrap; /* Prevent label wrapping */
   }
   
-  .item-cell {
-    justify-content: center;
-    text-align: center;
+  /* Special handling for the item cell (icon and name) */
+  #item-table td[data-label="Item"] {
+    text-align: left; /* Align the .item-cell content to the left */
+  }
+  
+  .item-cell { /* This is the div INSIDE td[data-label="Item"] */
+    justify-content: flex-start; /* Align icon and name to the left */
+  }
+
+  .item-icon {
+    width: 28px; /* Slightly smaller */
+    height: 28px;
+  }
+
+  .item-name {
+    font-size: 0.9rem; /* Match other values */
+    font-weight: 600;  /* Emphasize item name slightly */
   }
 }
 
