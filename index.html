@@ -49,7 +49,7 @@
                     <div class="stat-icon">🎯</div>
                     <div class="stat-content">
                         <div class="stat-label">Total Profit</div>
-                        <div class="stat-value" id="total-profit-loss">0</div>
+                        <div class="stat-value" id="total-profit-loss-container"><span id="total-profit-loss">0</span> <span id="total-profit-loss-percent" class="profit-loss-percent-stat"></span></div>
                     </div>
                 </div>
             </div>
@@ -184,6 +184,7 @@
                                 <th class="investment-col sortable" data-sort="investment">Investment</th>
                                 <th class="current-col sortable" data-sort="currentPrice">Current Price</th>
                                 <th class="pl-col sortable" data-sort="profitLoss">Profit</th>
+                                <th class="pl-percent-col sortable" data-sort="profitLossPercent">%</th>
                             </tr>
                         </thead>
                         <tbody id="item-list-body">

@@ -652,6 +652,12 @@ button:disabled {
   transition: opacity var(--transition-fast);
 }
 
+/* Ensure Profit % column header and cells are centered */
+#item-table th.pl-percent-col,
+#item-table td[data-label="%"] {
+  text-align: center;
+}
+
 #item-table td {
   padding: 1rem 0.75rem;
   border-bottom: 1px solid var(--border-color);
@@ -737,6 +743,20 @@ button:disabled {
 .loss {
   color: var(--error);
   font-weight: 600;
+}
+
+.profit-loss-percent-stat {
+  font-size: 0.9rem; /* Slightly smaller than main stat value */
+  margin-left: var(--spacing-xs);
+  font-weight: 500;
+}
+
+.profit-loss-percent-stat.profit {
+  color: var(--success);
+}
+
+.profit-loss-percent-stat.loss {
+  color: var(--error);
 }
 
 .neutral {
@@ -1212,6 +1232,11 @@ input::placeholder {
   /* Always show wiki link icon on mobile */
   .wiki-link-icon {
     opacity: 1;
+  }
+
+  /* On mobile, ensure % value is right-aligned like other values */
+  #item-table td[data-label="%"] {
+    text-align: right; /* Override the general center alignment for mobile */
   }
 }
 

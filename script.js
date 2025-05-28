@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalInvestmentEl = document.getElementById('total-investment');
     const currentValueEl = document.getElementById('current-value');
     const totalProfitLossEl = document.getElementById('total-profit-loss');
+    const totalProfitLossPercentEl = document.getElementById('total-profit-loss-percent');
     const tableLoadingOverlay = document.getElementById('table-loading-overlay');
     
     // Stats toggle elements
@@ -139,6 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     aValue = 0;
                     bValue = 0;
                     break;
+                case 'profitLossPercent':
+                    // This will be handled with current price data
+                    aValue = 0;
+                    bValue = 0;
+                    break;
                 default:
                     return 0;
             }
@@ -156,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sortItemsWithPriceData(column, direction = 'asc', pricesData = null) {
-        if (column !== 'currentPrice' && column !== 'profitLoss') {
+        if (column !== 'currentPrice' && column !== 'profitLoss' && column !== 'profitLossPercent') {
             sortItems(column, direction);
             return;
         }
@@ -194,6 +200,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         const bInvestment = b.purchasePrice * b.quantity;
                         const bCurrentValue = bCurrentPrice * b.quantity;
                         bValue = bCurrentValue - bInvestment;
+                    }
+                } else if (column === 'profitLossPercent') {
+                    const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
+                    const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
+
+                    if (aCurrentPrice) {
+                        const aInvestment = a.purchasePrice * a.quantity;
+                        if (aInvestment !== 0) {
+                            const aCurrentValue = aCurrentPrice * a.quantity;
+                            aValue = ((aCurrentValue - aInvestment) / aInvestment) * 100;
+                        } else {
+                            aValue = 0; // Or handle as needed for zero investment
+                        }
+                    }
+
+                    if (bCurrentPrice) {
+                        const bInvestment = b.purchasePrice * b.quantity;
+                        if (bInvestment !== 0) {
+                            const bCurrentValue = bCurrentPrice * b.quantity;
+                            bValue = ((bCurrentValue - bInvestment) / bInvestment) * 100;
+                        } else {
+                            bValue = 0; // Or handle as needed for zero investment
+                        }
                     }
                 }
             }
@@ -271,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.classList.add('search-no-results');
             const td = document.createElement('td');
             td.textContent = searchQuery.trim() ? `No items found matching "${searchQuery.trim()}"` : 'No items tracked yet. Add some!';
-            td.colSpan = 6;
+            td.colSpan = 7;
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             tbody.appendChild(tr);
@@ -298,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalInvestmentEl.textContent = '0';
             currentValueEl.textContent = '0';
             totalProfitLossEl.textContent = '0';
-            totalProfitLossEl.className = 'stat-value';
+            totalProfitLossPercentEl.textContent = '';
             
             summaryItemsEl.textContent = '0';
             summaryPlEl.textContent = '0';
@@ -332,6 +361,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const totalProfitLoss = totalCurrentValue - totalInvestment;
+            let profitPercent = 0;
+            if (totalInvestment !== 0) {
+                profitPercent = (totalProfitLoss / totalInvestment) * 100;
+            }
 
             totalItemsEl.textContent = items.length.toString();
             totalInvestmentEl.textContent = formatCurrency(totalInvestment);
@@ -340,6 +373,16 @@ document.addEventListener('DOMContentLoaded', () => {
             totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
             totalProfitLossEl.className = totalProfitLoss > 0 ? 'stat-value profit' : 
                                           totalProfitLoss < 0 ? 'stat-value loss' : 'stat-value';
+            
+            // Update percentage display
+            if (totalInvestment !== 0) {
+                totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
+                totalProfitLossPercentEl.className = profitPercent > 0 ? 'profit-loss-percent-stat profit' :
+                                                  profitPercent < 0 ? 'profit-loss-percent-stat loss' : 'profit-loss-percent-stat';
+            } else {
+                totalProfitLossPercentEl.textContent = '';
+                totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+            }
 
             summaryItemsEl.textContent = items.length.toString();
             summaryPlEl.textContent = formatCurrency(totalProfitLoss);
@@ -424,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function updateStatistics() {
-        if (!trackedItems || !totalItemsEl || !totalInvestmentEl || !currentValueEl || !totalProfitLossEl || !summaryItemsEl || !summaryPlEl) {
+        if (!trackedItems || !totalItemsEl || !totalInvestmentEl || !currentValueEl || !totalProfitLossEl || !summaryItemsEl || !summaryPlEl || !totalProfitLossPercentEl) {
             console.error("DOM elements for statistics not found or trackedItems missing.");
             return;
         }
@@ -442,19 +485,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const totalProfitLoss = currentValue - totalInvestment;
+        let profitPercent = 0;
+        if (totalInvestment !== 0) {
+            profitPercent = (totalProfitLoss / totalInvestment) * 100;
+        }
 
         totalItemsEl.textContent = itemsCount.toLocaleString();
         totalInvestmentEl.textContent = formatCurrency(totalInvestment);
         currentValueEl.textContent = formatCurrency(currentValue);
         totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
-
-        totalProfitLossEl.classList.remove('profit', 'loss', 'neutral');
-        if (totalProfitLoss > 0) {
-            totalProfitLossEl.classList.add('profit');
-        } else if (totalProfitLoss < 0) {
-            totalProfitLossEl.classList.add('loss');
+        
+        // Update class on parent container for color based on profit/loss
+        const profitLossContainer = document.getElementById('total-profit-loss-container');
+        if(profitLossContainer) {
+            profitLossContainer.className = 'stat-value'; // Reset base class
+            if (totalProfitLoss > 0) {
+                profitLossContainer.classList.add('profit');
+            } else if (totalProfitLoss < 0) {
+                profitLossContainer.classList.add('loss');
+            } else {
+                // profitLossContainer.classList.add('neutral'); // If you have a neutral class for the container
+            }
+        }
+        
+        // Update percentage display
+        if (totalInvestment !== 0) {
+            totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+            if (profitPercent > 0) {
+                totalProfitLossPercentEl.classList.add('profit');
+            } else if (profitPercent < 0) {
+                totalProfitLossPercentEl.classList.add('loss');
+            }
         } else {
-            totalProfitLossEl.classList.add('neutral'); 
+            totalProfitLossPercentEl.textContent = '';
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
         }
         
         summaryItemsEl.textContent = itemsCount.toLocaleString();
@@ -524,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.textContent = 'No items tracked yet. Add some!';
-            td.colSpan = 6; 
+            td.colSpan = 7;
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             itemListBody.appendChild(tr);
@@ -614,6 +679,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 profitLossCell.innerHTML = '<span class="neutral">N/A</span>';
             }
             tr.appendChild(profitLossCell);
+
+            // Profit Percentage Cell
+            const profitPercentCell = createCell('', '%');
+            if (item.currentPrice !== null && typeof item.currentPrice === 'number' && totalInvestmentForItem !== 0) {
+                const potentialSale = item.currentPrice * item.quantity;
+                const profitLoss = potentialSale - totalInvestmentForItem;
+                const profitPercent = (profitLoss / totalInvestmentForItem) * 100;
+                const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
+                profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
+            } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' && (item.currentPrice * item.quantity > 0) ){
+                profitPercentCell.innerHTML = '<span class="profit">+∞%</span>'; // Infinite profit if investment is 0 and current value is positive
+            }
+            else {
+                profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
+            }
+            tr.appendChild(profitPercentCell);
 
             if (!isReadOnlyMode) { // Only add click listener if not in read-only mode
                 tr.addEventListener('click', (event) => {
@@ -990,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.textContent = 'No items tracked yet. Add some!';
-            td.colSpan = 6;
+            td.colSpan = 7;
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             tbody.appendChild(tr);
@@ -1022,6 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const cells = row.querySelectorAll('td');
             const currentPriceCell = cells[4]; // Current Price column (0-indexed)
             const profitLossCell = cells[5]; // P&L column
+            const profitPercentCell = cells[6]; // Profit % column (Added)
 
             // Update Current Price Cell
             let currentPrice = null;
@@ -1055,6 +1137,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
                 profitLossCell.innerHTML = '<span class="neutral">N/A</span>';
+            }
+
+            // Update Profit Percentage Cell (Added)
+            if (currentPrice !== null) {
+                const totalInvestment = item.purchasePrice * item.quantity;
+                if (totalInvestment !== 0) {
+                    const potentialSale = currentPrice * item.quantity;
+                    const profitLoss = potentialSale - totalInvestment;
+                    const profitPercent = (profitLoss / totalInvestment) * 100;
+                    const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
+                    profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
+                } else if (totalInvestment === 0 && (currentPrice * item.quantity > 0)) {
+                     profitPercentCell.innerHTML = '<span class="profit">+∞%</span>';
+                }
+                else {
+                    profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
+                }
+            } else {
+                profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
             }
         });
 
@@ -1100,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSort = { column, direction };
             
             // Show loading if sorting by current price or P&L
-            const needsApiData = column === 'currentPrice' || column === 'profitLoss';
+            const needsApiData = column === 'currentPrice' || column === 'profitLoss' || column === 'profitLossPercent';
             if (needsApiData) {
                 showTableLoading();
             }
@@ -1396,6 +1497,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Helper function to apply default sort and update UI
+    async function applyDefaultSortAndIndicators() {
+        if (trackedItems.length > 0) {
+            currentSort = { column: 'profitLoss', direction: 'desc' };
+            // Assuming cachedLatestPrices is populated by a preceding renderItems call.
+            // sortItemsWithPriceData will fetch if cachedLatestPrices is null and pricesData arg is null.
+            await sortItemsWithPriceData(currentSort.column, currentSort.direction, cachedLatestPrices);
+            reorderTableRows();
+            updateSortIndicators(currentSort.column, currentSort.direction);
+        }
+    }
+
     async function loadFromShareableLink(encodedData) {
         try {
             const decodedData = atob(encodedData); // Base64 decode
@@ -1433,6 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isReadOnlyMode = true;
             enterReadOnlyMode();
             await renderItems(true); // Render the shared items
+            await applyDefaultSortAndIndicators(); // Apply default sort after rendering
 
         } catch (error) {
             console.error("Error loading from shareable link:", error);
@@ -1440,6 +1554,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fallback to normal loading if shared link is bad
             trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
             await renderItems(true);
+            await applyDefaultSortAndIndicators(); // Apply default sort to fallback
         }
     }
 
@@ -1521,6 +1636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
             await renderItems(true); // Pass true for initial load to show spinner
+            await applyDefaultSortAndIndicators(); // Apply default sort after rendering from localStorage
         }
     }).catch(error => {
         console.error("Error during initial load:", error);
