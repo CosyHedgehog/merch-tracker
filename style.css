@@ -1376,7 +1376,7 @@ input::placeholder {
     height: 2.75rem;
   }
   #refresh-prices-btn {
-    color: var(--bg-secondary);
+    color: var(--bg-tertiary);
     /* Styles for desktop standalone refresh button */
     padding: 0.75rem; /* Adjust padding for icon-only button */
     line-height: 1;
