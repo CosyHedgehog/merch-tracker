@@ -771,7 +771,9 @@ document.addEventListener('DOMContentLoaded', () => {
             purchasePriceCell.innerHTML = `<span class="currency">${formatCurrency(item.purchasePrice)}</span>`;
             tr.appendChild(purchasePriceCell);
 
-            tr.appendChild(createCell(item.quantity.toLocaleString(), 'Qty'));
+            const quantityCell = createCell('', 'Qty');
+            quantityCell.innerHTML = `<span class="currency">${item.quantity.toLocaleString()}</span>`;
+            tr.appendChild(quantityCell);
             
             const totalInvestmentForItem = item.purchasePrice * item.quantity;
             const investmentCell = createCell('', 'Investment');
