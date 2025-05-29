@@ -652,6 +652,28 @@ button:disabled {
   transition: opacity var(--transition-fast);
 }
 
+/* Tooltip icon in table header */
+.tooltip-icon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: help;
+  border: 1px solid var(--text-muted);
+  border-radius: 50%;
+  padding: 0.05em 0.3em;
+  margin-left: var(--spacing-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: relative; /* For potential future advanced tooltips */
+  user-select: none;
+}
+
+.tooltip-icon:hover {
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
 /* Ensure Profit % column header and cells are centered */
 #item-table th.pl-percent-col,
 #item-table td[data-label="%"] {

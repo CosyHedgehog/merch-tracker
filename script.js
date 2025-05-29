@@ -64,6 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Helper function to calculate Grand Exchange Tax
+    function calculateGeTax(saleAmount) {
+        if (typeof saleAmount !== 'number' || isNaN(saleAmount) || saleAmount <= 0) {
+            return 0;
+        }
+        const taxRate = 0.02; // 2%
+        const maxTax = 5000000; // 5,000,000 gp
+        let tax = Math.floor(saleAmount * taxRate); // GE tax typically truncates decimals
+        return Math.min(tax, maxTax);
+    }
+
     let trackedItems = JSON.parse(localStorage.getItem('osrsMerchItems')) || [];
     let itemMapping = null;
     let editingItemId = null;
@@ -184,49 +195,70 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (latestPricesData && latestPricesData.data) {
                 if (column === 'currentPrice') {
-                    aValue = getCurrentPrice(a.id, latestPricesData.data) || 0;
-                    bValue = getCurrentPrice(b.id, latestPricesData.data) || 0;
+                    const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
+                    const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
+                    if (aCurrentPrice !== null) {
+                        const aGrossSale = aCurrentPrice * a.quantity;
+                        aValue = aGrossSale - calculateGeTax(aGrossSale);
+                    }
+                    if (bCurrentPrice !== null) {
+                        const bGrossSale = bCurrentPrice * b.quantity;
+                        bValue = bGrossSale - calculateGeTax(bGrossSale);
+                    }
                 } else if (column === 'profitLoss') {
                     const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
                     const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
                     
-                    if (aCurrentPrice) {
+                    if (aCurrentPrice !== null) {
                         const aInvestment = a.purchasePrice * a.quantity;
-                        const aCurrentValue = aCurrentPrice * a.quantity;
-                        aValue = aCurrentValue - aInvestment;
+                        const aGrossSale = aCurrentPrice * a.quantity;
+                        const aNetSale = aGrossSale - calculateGeTax(aGrossSale);
+                        aValue = aNetSale - aInvestment;
                     }
                     
-                    if (bCurrentPrice) {
+                    if (bCurrentPrice !== null) {
                         const bInvestment = b.purchasePrice * b.quantity;
-                        const bCurrentValue = bCurrentPrice * b.quantity;
-                        bValue = bCurrentValue - bInvestment;
+                        const bGrossSale = bCurrentPrice * b.quantity;
+                        const bNetSale = bGrossSale - calculateGeTax(bGrossSale);
+                        bValue = bNetSale - bInvestment;
                     }
                 } else if (column === 'profitLossPercent') {
                     const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
                     const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
 
-                    if (aCurrentPrice) {
+                    if (aCurrentPrice !== null) {
                         const aInvestment = a.purchasePrice * a.quantity;
                         if (aInvestment !== 0) {
-                            const aCurrentValue = aCurrentPrice * a.quantity;
-                            aValue = ((aCurrentValue - aInvestment) / aInvestment) * 100;
-                        } else {
-                            aValue = 0; // Or handle as needed for zero investment
+                            const aGrossSale = aCurrentPrice * a.quantity;
+                            const aNetSale = aGrossSale - calculateGeTax(aGrossSale);
+                            aValue = ((aNetSale - aInvestment) / aInvestment) * 100;
+                        } else { // Zero investment
+                             const aGrossSale = aCurrentPrice * a.quantity;
+                            if (aGrossSale - calculateGeTax(aGrossSale) > 0) aValue = Infinity;
+                            else aValue = 0; // Or handle as needed
                         }
                     }
 
-                    if (bCurrentPrice) {
+                    if (bCurrentPrice !== null) {
                         const bInvestment = b.purchasePrice * b.quantity;
                         if (bInvestment !== 0) {
-                            const bCurrentValue = bCurrentPrice * b.quantity;
-                            bValue = ((bCurrentValue - bInvestment) / bInvestment) * 100;
-                        } else {
-                            bValue = 0; // Or handle as needed for zero investment
+                            const bGrossSale = bCurrentPrice * b.quantity;
+                            const bNetSale = bGrossSale - calculateGeTax(bGrossSale);
+                            bValue = ((bNetSale - bInvestment) / bInvestment) * 100;
+                        } else { // Zero investment
+                            const bGrossSale = bCurrentPrice * b.quantity;
+                            if (bGrossSale - calculateGeTax(bGrossSale) > 0) bValue = Infinity;
+                            else bValue = 0; // Or handle as needed
                         }
                     }
                 }
             }
             
+            // Handle Infinity cases for sorting properly
+            if (aValue === Infinity && bValue === Infinity) return 0;
+            if (aValue === Infinity) return direction === 'asc' ? 1 : -1;
+            if (bValue === Infinity) return direction === 'asc' ? -1 : 1;
+
             return direction === 'asc' ? aValue - bValue : bValue - aValue;
         });
 
@@ -325,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!items.length) {
             totalItemsEl.textContent = '0';
             totalInvestmentEl.textContent = '0';
-            currentValueEl.textContent = '0';
+            currentValueEl.textContent = '0'; // Gross Current Value
             totalProfitLossEl.textContent = '0';
             totalProfitLossPercentEl.textContent = '';
             
@@ -342,79 +374,95 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let totalInvestment = 0;
-        let totalCurrentValue = 0;
+        let grossCurrentValue = 0; // Represents value before tax
+        const itemsCount = items.length;
 
-        // Get current prices for calculation - this might be slightly delayed if API is hit
-        // Consider if this needs to be more immediate or if cachedLatestPrices should be preferred.
-        // For debounced search, fetching here is okay.
-        fetchAPI('latest').then(latestPricesData => {
-            for (const item of items) {
-                const investment = item.purchasePrice * item.quantity;
-                totalInvestment += investment;
+        // Calculate total tax separately to keep grossCurrentValue clean for display
+        let totalGeTaxCalculated = 0;
 
-                if (latestPricesData && latestPricesData.data && latestPricesData.data[item.id]) {
-                    const currentPrice = getCurrentPrice(item.id, latestPricesData.data);
-                    if (currentPrice !== null) {
-                        totalCurrentValue += currentPrice * item.quantity;
-                    } else {
-                        // If current price is not available, use purchase price for current value (neutral P&L for this item)
-                        totalCurrentValue += investment; 
-                    }
+        for (const item of items) {
+            const investment = item.purchasePrice * item.quantity;
+            totalInvestment += investment;
+
+            if (latestPricesData && latestPricesData.data && latestPricesData.data[item.id]) {
+                const currentPrice = getCurrentPrice(item.id, latestPricesData.data);
+                if (currentPrice !== null) {
+                    const grossSaleValue = currentPrice * item.quantity;
+                    grossCurrentValue += grossSaleValue; // Accumulate gross value for display
+                    // Tax will be applied when calculating totalProfitLoss
                 } else {
-                    // If item not in price data, use purchase price for current value
-                    totalCurrentValue += investment;
-                }
-            }
-
-            const totalProfitLoss = totalCurrentValue - totalInvestment;
-            let profitPercent = 0;
-            if (totalInvestment !== 0) {
-                profitPercent = (totalProfitLoss / totalInvestment) * 100;
-            }
-
-            totalItemsEl.textContent = items.length.toString();
-            totalInvestmentEl.textContent = formatCurrency(totalInvestment);
-            currentValueEl.textContent = formatCurrency(totalCurrentValue);
-            
-            totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
-            totalProfitLossEl.className = ''; // Clear any direct classes on the span
-
-            const profitLossContainer = document.getElementById('total-profit-loss-container');
-            if (profitLossContainer) {
-                profitLossContainer.className = 'stat-value'; // Reset to base class
-                if (totalProfitLoss > 0) {
-                    profitLossContainer.classList.add('profit');
-                } else if (totalProfitLoss < 0) {
-                    profitLossContainer.classList.add('loss');
-                }
-            }
-            
-            // Update percentage display
-            if (totalInvestment !== 0) {
-                totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
-                totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
-                if (profitPercent > 0) {
-                    totalProfitLossPercentEl.classList.add('profit');
-                } else if (profitPercent < 0) {
-                    totalProfitLossPercentEl.classList.add('loss');
+                    // If current price is not available, use purchase price for current value
+                    grossCurrentValue += investment; 
                 }
             } else {
-                totalProfitLossPercentEl.textContent = '';
-                totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset to base
+                // If item not in price data, use purchase price for current value
+                grossCurrentValue += investment;
             }
+        }
 
-            summaryItemsEl.textContent = items.length.toString();
-            summaryPlEl.textContent = formatCurrency(totalProfitLoss);
-            summaryPlEl.className = 'summary-pl'; // Reset base class
+        const totalProfitLoss = (grossCurrentValue - calculateGeTaxForAllItems(items, latestPricesData)) - totalInvestment;
+        let profitPercent = 0;
+        // Calculate profit percent based on total investment and net profit
+        const netProfitAfterAllTaxes = grossCurrentValue - calculateGeTaxForAllItems(items, latestPricesData) - totalInvestment;
+        if (totalInvestment !== 0) {
+            profitPercent = (netProfitAfterAllTaxes / totalInvestment) * 100;
+        }
+
+        totalItemsEl.textContent = itemsCount.toString();
+        totalInvestmentEl.textContent = formatCurrency(totalInvestment);
+        currentValueEl.textContent = formatCurrency(grossCurrentValue); // Display gross current value
+        totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
+        
+        // Update class on parent container for color based on profit/loss
+        const profitLossContainer = document.getElementById('total-profit-loss-container');
+        if (profitLossContainer) {
+            profitLossContainer.className = 'stat-value'; // Reset to base class
             if (totalProfitLoss > 0) {
-                summaryPlEl.classList.add('profit');
+                profitLossContainer.classList.add('profit');
             } else if (totalProfitLoss < 0) {
-                summaryPlEl.classList.add('loss');
+                profitLossContainer.classList.add('loss');
             }
-        }).catch(error => {
-            console.error("Error updating stats for items:", error);
-            // Potentially display a muted error or rely on N/A values in table
-        });
+        }
+        
+        // Update percentage display
+        if (totalInvestment !== 0) {
+            totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
+            if (profitPercent > 0) {
+                totalProfitLossPercentEl.classList.add('profit');
+            } else if (profitPercent < 0) {
+                totalProfitLossPercentEl.classList.add('loss');
+            }
+        } else {
+            totalProfitLossPercentEl.textContent = '';
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset to base
+        }
+
+        summaryItemsEl.textContent = itemsCount.toString();
+        summaryPlEl.textContent = formatCurrency(totalProfitLoss);
+        summaryPlEl.classList.remove('profit', 'loss');
+        if (totalProfitLoss > 0) {
+            summaryPlEl.classList.add('profit');
+        } else if (totalProfitLoss < 0) {
+            summaryPlEl.classList.add('loss');
+        } else {
+            // neutral for 0 P&L, no specific class needed if default is neutral
+        }
+    }
+
+    // Helper function to calculate total GE tax for a list of items
+    function calculateGeTaxForAllItems(items, pricesData) {
+        let totalTax = 0;
+        if (!pricesData || !pricesData.data) return 0;
+
+        for (const item of items) {
+            const currentPrice = getCurrentPrice(item.id, pricesData.data);
+            if (currentPrice !== null) {
+                const grossSaleValue = currentPrice * item.quantity;
+                totalTax += calculateGeTax(grossSaleValue);
+            }
+        }
+        return totalTax;
     }
 
     let filteredItems = [];
@@ -496,18 +544,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let totalInvestment = 0;
-        let currentValue = 0;
+        let grossCurrentValue = 0; // Represents value before tax
         const itemsCount = trackedItems.length;
+
+        // Calculate total tax separately to keep grossCurrentValue clean for display
+        let totalGeTaxCalculated = 0;
 
         for (const item of trackedItems) {
             totalInvestment += parseFloat(item.purchasePrice) * parseInt(item.quantity);
-            const price = parseFloat(item.currentPrice);
+            const price = parseFloat(item.currentPrice); // item.currentPrice should be fresh from renderItems
             if (typeof price === 'number' && !isNaN(price)) {
-                currentValue += price * parseInt(item.quantity);
+                const itemGrossSaleValue = price * parseInt(item.quantity);
+                grossCurrentValue += itemGrossSaleValue; // Add gross value for display
+                totalGeTaxCalculated += calculateGeTax(itemGrossSaleValue); // Accumulate tax
             }
         }
 
-        const totalProfitLoss = currentValue - totalInvestment;
+        const totalProfitLoss = grossCurrentValue - totalGeTaxCalculated - totalInvestment;
         let profitPercent = 0;
         if (totalInvestment !== 0) {
             profitPercent = (totalProfitLoss / totalInvestment) * 100;
@@ -515,26 +568,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         totalItemsEl.textContent = itemsCount.toLocaleString();
         totalInvestmentEl.textContent = formatCurrency(totalInvestment);
-        currentValueEl.textContent = formatCurrency(currentValue);
+        currentValueEl.textContent = formatCurrency(grossCurrentValue); // Display gross current value
         totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
         
         // Update class on parent container for color based on profit/loss
         const profitLossContainer = document.getElementById('total-profit-loss-container');
-        if(profitLossContainer) {
-            profitLossContainer.className = 'stat-value'; // Reset base class
+        if (profitLossContainer) {
+            profitLossContainer.className = 'stat-value'; // Reset to base class
             if (totalProfitLoss > 0) {
                 profitLossContainer.classList.add('profit');
             } else if (totalProfitLoss < 0) {
                 profitLossContainer.classList.add('loss');
-            } else {
-                // profitLossContainer.classList.add('neutral'); // If you have a neutral class for the container
             }
         }
         
         // Update percentage display
         if (totalInvestment !== 0) {
             totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
-            totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
             if (profitPercent > 0) {
                 totalProfitLossPercentEl.classList.add('profit');
             } else if (profitPercent < 0) {
@@ -542,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             totalProfitLossPercentEl.textContent = '';
-            totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset to base
         }
         
         summaryItemsEl.textContent = itemsCount.toLocaleString();
@@ -695,7 +746,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const profitLossCell = createCell('', 'Profit');
             if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
                 const potentialSale = item.currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestmentForItem;
+                const geTax = calculateGeTax(potentialSale);
+                const profitLoss = potentialSale - totalInvestmentForItem - geTax;
                 const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
                 profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
@@ -707,12 +759,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const profitPercentCell = createCell('', '%');
             if (item.currentPrice !== null && typeof item.currentPrice === 'number' && totalInvestmentForItem !== 0) {
                 const potentialSale = item.currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestmentForItem;
-                const profitPercent = (profitLoss / totalInvestmentForItem) * 100;
+                const geTax = calculateGeTax(potentialSale);
+                const netProfit = potentialSale - totalInvestmentForItem - geTax;
+                const profitPercent = (netProfit / totalInvestmentForItem) * 100;
                 const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
                 profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
-            } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' && (item.currentPrice * item.quantity > 0) ){
-                profitPercentCell.innerHTML = '<span class="profit">+∞%</span>'; // Infinite profit if investment is 0 and current value is positive
+            } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number') {
+                const potentialSale = item.currentPrice * item.quantity;
+                // For 0 investment, profit is just the sale value after tax
+                if (potentialSale - calculateGeTax(potentialSale) > 0) {
+                    profitPercentCell.innerHTML = '<span class="profit">+∞%</span>'; 
+                } else {
+                    profitPercentCell.innerHTML = '<span class="neutral">N/A</span>'; // Or 0% if sale value is 0 after tax
+                }
             }
             else {
                 profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
@@ -1158,7 +1217,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentPrice !== null) {
                 const totalInvestment = item.purchasePrice * item.quantity;
                 const potentialSale = currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestment;
+                const geTax = calculateGeTax(potentialSale);
+                const profitLoss = potentialSale - totalInvestment - geTax;
                 const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
                 profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
@@ -1170,15 +1230,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const totalInvestment = item.purchasePrice * item.quantity;
                 if (totalInvestment !== 0) {
                     const potentialSale = currentPrice * item.quantity;
-                    const profitLoss = potentialSale - totalInvestment;
-                    const profitPercent = (profitLoss / totalInvestment) * 100;
+                    const geTax = calculateGeTax(potentialSale);
+                    const netProfit = potentialSale - totalInvestment - geTax;
+                    const profitPercent = (netProfit / totalInvestment) * 100;
                     const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
                     profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
-                } else if (totalInvestment === 0 && (currentPrice * item.quantity > 0)) {
-                     profitPercentCell.innerHTML = '<span class="profit">+∞%</span>';
-                }
-                else {
-                    profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
+                } else { // Investment is 0
+                    const potentialSale = currentPrice * item.quantity;
+                     if (potentialSale - calculateGeTax(potentialSale) > 0) {
+                         profitPercentCell.innerHTML = '<span class="profit">+∞%</span>';
+                    } else {
+                        profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
+                    }
                 }
             } else {
                 profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
