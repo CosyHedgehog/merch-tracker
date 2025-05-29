@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.classList.add('dropdown-item');
             div.textContent = item.name;
-            div.addEventListener('click', () => selectItem(item));
+            div.addEventListener('click', async () => await selectItem(item));
             itemDropdown.appendChild(div);
         });
 
@@ -506,10 +506,46 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedIndex = -1;
     }
 
-    function selectItem(item) {
+    async function selectItem(item) {
         itemNameInput.value = item.name;
         hideDropdown();
-        purchasePriceInput.focus();
+
+        const originalPlaceholder = purchasePriceInput.placeholder;
+        purchasePriceInput.placeholder = 'Fetching price...';
+        purchasePriceInput.value = ''; // Clear previous value
+        purchasePriceInput.disabled = true; // Disable while fetching
+
+        let priceToSet = '';
+
+        try {
+            let itemPriceSourceData = null;
+            // Check cache first
+            if (cachedLatestPrices && cachedLatestPrices.data && cachedLatestPrices.data[item.id]) {
+                itemPriceSourceData = cachedLatestPrices.data;
+            } else {
+                // Fetch latest prices if not in cache or cache is empty
+                const latestPrices = await fetchAPI('latest');
+                if (latestPrices && latestPrices.data) {
+                    cachedLatestPrices = latestPrices; // Update cache
+                    itemPriceSourceData = latestPrices.data;
+                }
+            }
+
+            if (itemPriceSourceData) {
+                const currentAvgPrice = getCurrentPrice(item.id, itemPriceSourceData);
+                if (currentAvgPrice !== null) {
+                    priceToSet = currentAvgPrice.toString();
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching price for ${item.name}:`, error);
+            // Optionally, display a user-friendly error message here
+        } finally {
+            purchasePriceInput.value = priceToSet;
+            purchasePriceInput.placeholder = originalPlaceholder;
+            purchasePriceInput.disabled = false;
+            purchasePriceInput.focus();
+        }
     }
 
     function highlightItem(index) {
@@ -1073,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    itemNameInput.addEventListener('keydown', (e) => {
+    itemNameInput.addEventListener('keydown', async (e) => {
         const items = itemDropdown.querySelectorAll('.dropdown-item');
         
         switch (e.key) {
@@ -1090,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'Enter':
                 e.preventDefault();
                 if (selectedIndex >= 0 && filteredItems[selectedIndex]) {
-                    selectItem(filteredItems[selectedIndex]);
+                    await selectItem(filteredItems[selectedIndex]);
                 }
                 break;
             case 'Escape':
