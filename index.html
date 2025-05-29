@@ -48,7 +48,7 @@
                 <div class="stat-card profit-loss-card">
                     <div class="stat-icon">🎯</div>
                     <div class="stat-content">
-                        <div class="stat-label">Total Profit</div>
+                        <div class="stat-label">Total Profit <span class="tooltip-hint" title="After 2% tax">(?)</span></div>
                         <div class="stat-value" id="total-profit-loss-container"><span id="total-profit-loss">0</span> <span id="total-profit-loss-percent" class="profit-loss-percent-stat"></span></div>
                     </div>
                 </div>
@@ -182,8 +182,9 @@
                                 <th class="price-col sortable" data-sort="purchasePrice">Purchase Price</th>
                                 <th class="qty-col sortable" data-sort="quantity">Qty</th>
                                 <th class="investment-col sortable" data-sort="investment">Investment</th>
-                                <th class="current-col sortable" data-sort="currentPrice">Current Price</th>
-                                <th class="pl-col sortable" data-sort="profitLoss">Profit</th>
+                                <th class="current-col sortable" data-sort="currentPrice">Price</th>
+                                <th class="taxed-price-col sortable" data-sort="priceAfterTax">Price - Tax</th>
+                                <th class="pl-col sortable" data-sort="profitLoss">Profit <span class="tooltip-hint" title="After 2% tax">(?)</span></th>
                                 <th class="pl-percent-col sortable" data-sort="profitLossPercent">%</th>
                             </tr>
                         </thead>

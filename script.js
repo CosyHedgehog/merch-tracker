@@ -131,17 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     bValue = b.purchasePrice * b.quantity;
                     break;
                 case 'currentPrice':
-                    // This will be handled with current price data
+                    aValue = 0;
+                    bValue = 0;
+                    break;
+                case 'priceAfterTax':
                     aValue = 0;
                     bValue = 0;
                     break;
                 case 'profitLoss':
-                    // This will be handled with current price data
                     aValue = 0;
                     bValue = 0;
                     break;
                 case 'profitLossPercent':
-                    // This will be handled with current price data
                     aValue = 0;
                     bValue = 0;
                     break;
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sortItemsWithPriceData(column, direction = 'asc', pricesData = null) {
-        if (column !== 'currentPrice' && column !== 'profitLoss' && column !== 'profitLossPercent') {
+        if (column !== 'currentPrice' && column !== 'profitLoss' && column !== 'profitLossPercent' && column !== 'priceAfterTax') {
             sortItems(column, direction);
             return;
         }
@@ -186,40 +187,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (column === 'currentPrice') {
                     aValue = getCurrentPrice(a.id, latestPricesData.data) || 0;
                     bValue = getCurrentPrice(b.id, latestPricesData.data) || 0;
+                } else if (column === 'priceAfterTax') {
+                    const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
+                    const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
+                    aValue = aCurrentPrice !== null ? Math.round(aCurrentPrice * 0.98) : 0;
+                    bValue = bCurrentPrice !== null ? Math.round(bCurrentPrice * 0.98) : 0;
                 } else if (column === 'profitLoss') {
                     const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
                     const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
                     
-                    if (aCurrentPrice) {
+                    if (aCurrentPrice !== null) {
+                        const aPriceAfterTax = Math.round(aCurrentPrice * 0.98);
                         const aInvestment = a.purchasePrice * a.quantity;
-                        const aCurrentValue = aCurrentPrice * a.quantity;
-                        aValue = aCurrentValue - aInvestment;
+                        const aCurrentValueAfterTax = aPriceAfterTax * a.quantity;
+                        aValue = aCurrentValueAfterTax - aInvestment;
                     }
                     
-                    if (bCurrentPrice) {
+                    if (bCurrentPrice !== null) {
+                        const bPriceAfterTax = Math.round(bCurrentPrice * 0.98);
                         const bInvestment = b.purchasePrice * b.quantity;
-                        const bCurrentValue = bCurrentPrice * b.quantity;
-                        bValue = bCurrentValue - bInvestment;
+                        const bCurrentValueAfterTax = bPriceAfterTax * b.quantity;
+                        bValue = bCurrentValueAfterTax - bInvestment;
                     }
                 } else if (column === 'profitLossPercent') {
                     const aCurrentPrice = getCurrentPrice(a.id, latestPricesData.data);
                     const bCurrentPrice = getCurrentPrice(b.id, latestPricesData.data);
 
-                    if (aCurrentPrice) {
+                    if (aCurrentPrice !== null) {
+                        const aPriceAfterTax = Math.round(aCurrentPrice * 0.98);
                         const aInvestment = a.purchasePrice * a.quantity;
                         if (aInvestment !== 0) {
-                            const aCurrentValue = aCurrentPrice * a.quantity;
-                            aValue = ((aCurrentValue - aInvestment) / aInvestment) * 100;
+                            const aCurrentValueAfterTax = aPriceAfterTax * a.quantity;
+                            aValue = ((aCurrentValueAfterTax - aInvestment) / aInvestment) * 100;
                         } else {
                             aValue = 0; // Or handle as needed for zero investment
                         }
                     }
 
-                    if (bCurrentPrice) {
+                    if (bCurrentPrice !== null) {
+                        const bPriceAfterTax = Math.round(bCurrentPrice * 0.98);
                         const bInvestment = b.purchasePrice * b.quantity;
                         if (bInvestment !== 0) {
-                            const bCurrentValue = bCurrentPrice * b.quantity;
-                            bValue = ((bCurrentValue - bInvestment) / bInvestment) * 100;
+                            const bCurrentValueAfterTax = bPriceAfterTax * b.quantity;
+                            bValue = ((bCurrentValueAfterTax - bInvestment) / bInvestment) * 100;
                         } else {
                             bValue = 0; // Or handle as needed for zero investment
                         }
@@ -300,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.classList.add('search-no-results');
             const td = document.createElement('td');
             td.textContent = searchQuery.trim() ? `No items found matching "${searchQuery.trim()}"` : 'No items tracked yet. Add some!';
-            td.colSpan = 7;
+            td.colSpan = 8;
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             tbody.appendChild(tr);
@@ -343,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let totalInvestment = 0;
         let totalCurrentValue = 0;
+        let totalProfitLoss = 0;
 
         // Get current prices for calculation - this might be slightly delayed if API is hit
         // Consider if this needs to be more immediate or if cachedLatestPrices should be preferred.
@@ -352,21 +363,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const investment = item.purchasePrice * item.quantity;
                 totalInvestment += investment;
 
+                let itemCurrentPrice = 0;
                 if (latestPricesData && latestPricesData.data && latestPricesData.data[item.id]) {
-                    const currentPrice = getCurrentPrice(item.id, latestPricesData.data);
-                    if (currentPrice !== null) {
-                        totalCurrentValue += currentPrice * item.quantity;
+                    itemCurrentPrice = getCurrentPrice(item.id, latestPricesData.data);
+                    if (itemCurrentPrice !== null) {
+                        totalCurrentValue += itemCurrentPrice * item.quantity;
+                        const priceAfterTax = Math.round(itemCurrentPrice * 0.98);
+                        totalProfitLoss += (priceAfterTax * item.quantity) - investment;
                     } else {
                         // If current price is not available, use purchase price for current value (neutral P&L for this item)
                         totalCurrentValue += investment; 
+                        // Profit remains unchanged (0 for this item)
                     }
                 } else {
                     // If item not in price data, use purchase price for current value
                     totalCurrentValue += investment;
+                    // Profit remains unchanged (0 for this item)
                 }
             }
 
-            const totalProfitLoss = totalCurrentValue - totalInvestment;
             let profitPercent = 0;
             if (totalInvestment !== 0) {
                 profitPercent = (totalProfitLoss / totalInvestment) * 100;
@@ -497,37 +512,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let totalInvestment = 0;
         let currentValue = 0;
+        let totalProfitLossValue = 0;
         const itemsCount = trackedItems.length;
 
         for (const item of trackedItems) {
-            totalInvestment += parseFloat(item.purchasePrice) * parseInt(item.quantity);
+            const investment = parseFloat(item.purchasePrice) * parseInt(item.quantity);
+            totalInvestment += investment;
             const price = parseFloat(item.currentPrice);
             if (typeof price === 'number' && !isNaN(price)) {
                 currentValue += price * parseInt(item.quantity);
+                const priceAfterTax = Math.round(price * 0.98);
+                totalProfitLossValue += (priceAfterTax * parseInt(item.quantity)) - investment;
+            } else {
+                 // If current price N/A, profit for this item is 0, currentValue uses investment.
             }
         }
 
-        const totalProfitLoss = currentValue - totalInvestment;
         let profitPercent = 0;
         if (totalInvestment !== 0) {
-            profitPercent = (totalProfitLoss / totalInvestment) * 100;
+            profitPercent = (totalProfitLossValue / totalInvestment) * 100;
         }
 
         totalItemsEl.textContent = itemsCount.toLocaleString();
         totalInvestmentEl.textContent = formatCurrency(totalInvestment);
         currentValueEl.textContent = formatCurrency(currentValue);
-        totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
+        totalProfitLossEl.textContent = formatCurrency(totalProfitLossValue);
         
         // Update class on parent container for color based on profit/loss
         const profitLossContainer = document.getElementById('total-profit-loss-container');
         if(profitLossContainer) {
             profitLossContainer.className = 'stat-value'; // Reset base class
-            if (totalProfitLoss > 0) {
+            if (totalProfitLossValue > 0) {
                 profitLossContainer.classList.add('profit');
-            } else if (totalProfitLoss < 0) {
+            } else if (totalProfitLossValue < 0) {
                 profitLossContainer.classList.add('loss');
-            } else {
-                // profitLossContainer.classList.add('neutral'); // If you have a neutral class for the container
             }
         }
         
@@ -546,14 +564,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         summaryItemsEl.textContent = itemsCount.toLocaleString();
-        summaryPlEl.textContent = formatCurrency(totalProfitLoss);
+        summaryPlEl.textContent = formatCurrency(totalProfitLossValue);
         summaryPlEl.classList.remove('profit', 'loss');
-        if (totalProfitLoss > 0) {
+        if (totalProfitLossValue > 0) {
             summaryPlEl.classList.add('profit');
-        } else if (totalProfitLoss < 0) {
+        } else if (totalProfitLossValue < 0) {
             summaryPlEl.classList.add('loss');
-        } else {
-            // neutral for 0 P&L, no specific class needed if default is neutral
         }
     }
 
@@ -612,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.textContent = 'No items tracked yet. Add some!';
-            td.colSpan = 7;
+            td.colSpan = 8;
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             itemListBody.appendChild(tr);
@@ -683,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.appendChild(investmentCell);
 
             // Current Price Cell - uses item.currentPrice directly now
-            const currentPriceCell = createCell('', 'Current Price');
+            const currentPriceCell = createCell('', 'Price');
             if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
                 currentPriceCell.innerHTML = `<span class="currency">${formatCurrency(item.currentPrice)}</span>`;
             } else {
@@ -691,11 +707,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tr.appendChild(currentPriceCell);
 
+            // Price After Tax Cell - New Cell
+            const priceAfterTaxCell = createCell('', 'Price - Tax');
+            if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
+                const priceAfterTaxValue = Math.round(item.currentPrice * 0.98); // Use a different name if needed for this scope
+                priceAfterTaxCell.innerHTML = `<span class="currency">${formatCurrency(priceAfterTaxValue)}</span>`;
+            } else {
+                priceAfterTaxCell.innerHTML = '<span class="text-muted">N/A</span>';
+            }
+            tr.appendChild(priceAfterTaxCell);
+
             // Profit/Loss Cell - uses item.currentPrice directly now
             const profitLossCell = createCell('', 'Profit');
             if (item.currentPrice !== null && typeof item.currentPrice === 'number') {
-                const potentialSale = item.currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestmentForItem;
+                const priceAfterTaxValue = Math.round(item.currentPrice * 0.98); // Recalculate for this scope or ensure correct variable
+                const potentialSaleAfterTax = priceAfterTaxValue * item.quantity;
+                const profitLoss = potentialSaleAfterTax - totalInvestmentForItem;
                 const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
                 profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
@@ -706,12 +733,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Profit Percentage Cell
             const profitPercentCell = createCell('', '%');
             if (item.currentPrice !== null && typeof item.currentPrice === 'number' && totalInvestmentForItem !== 0) {
-                const potentialSale = item.currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestmentForItem;
+                const priceAfterTaxValue = Math.round(item.currentPrice * 0.98); // Recalculate for this scope
+                const potentialSaleAfterTax = priceAfterTaxValue * item.quantity;
+                const profitLoss = potentialSaleAfterTax - totalInvestmentForItem;
                 const profitPercent = (profitLoss / totalInvestmentForItem) * 100;
                 const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
                 profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
-            } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' && (item.currentPrice * item.quantity > 0) ){
+            } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' && (Math.round(item.currentPrice * 0.98) * item.quantity > 0) ){
                 profitPercentCell.innerHTML = '<span class="profit">+∞%</span>'; // Infinite profit if investment is 0 and current value is positive
             }
             else {
@@ -731,7 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemListBody.appendChild(tr);
         }
         
-        await updateStatistics(); // updateStatistics uses item.currentPrice from trackedItems
+        await updateStatistics(); // updateStatistics uses item.currentPrice from trackedItems, which is now fresh
         
         if (showLoading) {
             const elapsed = Date.now() - startTime;
@@ -1097,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
             td.textContent = 'No items tracked yet. Add some!';
-            td.colSpan = 7;
+            td.colSpan = 8;
             td.classList.add('no-items-cell');
             tr.appendChild(td);
             tbody.appendChild(tr);
@@ -1127,12 +1155,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!item) return;
 
             const cells = row.querySelectorAll('td');
-            const currentPriceCell = cells[4]; // Current Price column (0-indexed)
-            const profitLossCell = cells[5]; // P&L column
-            const profitPercentCell = cells[6]; // Profit % column (Added)
+            const currentPriceCell = cells[4]; // Price column (0-indexed)
+            const priceAfterTaxCell = cells[5]; // Price - Tax column
+            const profitLossCell = cells[6]; // P&L column
+            const profitPercentCell = cells[7]; // Profit % column
 
-            // Update Current Price Cell
+            // Update Current Price Cell (now just 'Price')
             let currentPrice = null;
+            let priceAfterTax = null; // CORRECT: Declare priceAfterTax here for the scope of this forEach iteration
+
             if (latestPricesData.data[item.id]) {
                 const priceInfo = latestPricesData.data[item.id];
                 const currentPriceHigh = priceInfo.high;
@@ -1154,11 +1185,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentPriceCell.innerHTML = '<span class="text-muted">N/A</span>';
             }
 
-            // Update P&L Cell
+            // Update Price After Tax Cell (New)
             if (currentPrice !== null) {
+                priceAfterTax = Math.round(currentPrice * 0.98); // Assign to the higher-scoped variable
+                priceAfterTaxCell.innerHTML = `<span class="currency">${formatCurrency(priceAfterTax)}</span>`;
+            } else {
+                priceAfterTaxCell.innerHTML = '<span class="text-muted">N/A</span>';
+            }
+
+            // Update P&L Cell
+            if (priceAfterTax !== null) { // CORRECT: Check higher-scoped priceAfterTax directly
                 const totalInvestment = item.purchasePrice * item.quantity;
-                const potentialSale = currentPrice * item.quantity;
-                const profitLoss = potentialSale - totalInvestment;
+                const potentialSaleAfterTax = priceAfterTax * item.quantity;
+                const profitLoss = potentialSaleAfterTax - totalInvestment;
                 const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
                 profitLossCell.innerHTML = `<span class="${profitClass} currency">${formatCurrency(profitLoss)}</span>`;
             } else {
@@ -1166,15 +1205,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Update Profit Percentage Cell (Added)
-            if (currentPrice !== null) {
+            if (priceAfterTax !== null) { // CORRECT: Check higher-scoped priceAfterTax directly
                 const totalInvestment = item.purchasePrice * item.quantity;
                 if (totalInvestment !== 0) {
-                    const potentialSale = currentPrice * item.quantity;
-                    const profitLoss = potentialSale - totalInvestment;
+                    const potentialSaleAfterTax = priceAfterTax * item.quantity;
+                    const profitLoss = potentialSaleAfterTax - totalInvestment;
                     const profitPercent = (profitLoss / totalInvestment) * 100;
                     const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
                     profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
-                } else if (totalInvestment === 0 && (currentPrice * item.quantity > 0)) {
+                } else if (totalInvestment === 0 && (priceAfterTax * item.quantity > 0)) {
                      profitPercentCell.innerHTML = '<span class="profit">+∞%</span>';
                 }
                 else {
@@ -1227,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSort = { column, direction };
             
             // Show loading if sorting by current price or P&L
-            const needsApiData = column === 'currentPrice' || column === 'profitLoss' || column === 'profitLossPercent';
+            const needsApiData = column === 'currentPrice' || column === 'priceAfterTax' || column === 'profitLoss' || column === 'profitLossPercent';
             if (needsApiData) {
                 showTableLoading();
             }
