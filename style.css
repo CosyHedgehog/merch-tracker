@@ -754,7 +754,7 @@ button:disabled {
 }
 
 .profit-loss-percent-stat {
-  font-size: 0.9rem; /* Slightly smaller than main stat value */
+  font-size: 1rem; /* Slightly smaller than main stat value */
   margin-left: var(--spacing-xs);
   font-weight: 500;
 }

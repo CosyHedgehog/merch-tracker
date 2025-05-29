@@ -411,7 +411,12 @@ document.addEventListener('DOMContentLoaded', () => {
             totalInvestmentEl.textContent = formatCurrency(totalInvestment);
             currentValueEl.textContent = formatCurrency(totalCurrentValue);
             
-            totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
+            // Create profitDisplay and add emoji if needed
+            let profitDisplay = formatCurrency(totalProfitLoss);
+            if (profitPercent > 30) {
+                profitDisplay += ' 🔥';
+            }
+            totalProfitLossEl.textContent = profitDisplay; // Use profitDisplay here
             totalProfitLossEl.className = ''; // Clear any direct classes on the span
 
             const profitLossContainer = document.getElementById('total-profit-loss-container');
@@ -426,7 +431,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Update percentage display
             if (totalInvestment !== 0) {
-                totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
+                let percentDisplay = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
+                if (profitPercent > 30) {
+                    percentDisplay += ' 🔥';
+                }
+                totalProfitLossPercentEl.textContent = percentDisplay;
                 totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
                 if (profitPercent > 0) {
                     totalProfitLossPercentEl.classList.add('profit');
@@ -439,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             summaryItemsEl.textContent = items.length.toString();
-            summaryPlEl.textContent = formatCurrency(totalProfitLoss);
+            summaryPlEl.textContent = profitDisplay; // Use profitDisplay here as well
             summaryPlEl.className = 'summary-pl'; // Reset base class
             if (totalProfitLoss > 0) {
                 summaryPlEl.classList.add('profit');
@@ -631,8 +640,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update percentage display
         if (totalInvestment !== 0) {
-            totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
-            totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+            let percentDisplay = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
+            if (profitPercent > 30) {
+                percentDisplay += ' 🔥';
+            }
+            totalProfitLossPercentEl.textContent = percentDisplay;
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
             if (profitPercent > 0) {
                 totalProfitLossPercentEl.classList.add('profit');
             } else if (profitPercent < 0) {
@@ -640,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             totalProfitLossPercentEl.textContent = '';
-            totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+            totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset to base
         }
         
         summaryItemsEl.textContent = itemsCount.toLocaleString();
@@ -829,14 +842,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     const profitLoss = potentialSaleAfterTax - totalInvestmentForItem;
                     const profitPercent = (profitLoss / totalInvestmentForItem) * 100;
                     const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
-                    profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
-                } else {
+                    let profitPercentDisplay = `${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%`;
+                    if (profitPercent > 30) {
+                        profitPercentDisplay += ' 🔥';
+                    }
+                    profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercentDisplay}</span>`;
+                } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' ){
+                    const priceAfterTaxValue = calculatePriceAfterTax(item.currentPrice);
+                    if (priceAfterTaxValue !== null && priceAfterTaxValue * item.quantity > 0) {
+                        profitPercentCell.innerHTML = '<span class="profit">+∞% 🔥</span>'; // Infinite profit if investment is 0 and current value is positive
+                    } else {
+                        profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
+                    }
+                }
+                else {
                     profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
                 }
             } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' ){
                 const priceAfterTaxValue = calculatePriceAfterTax(item.currentPrice);
                 if (priceAfterTaxValue !== null && priceAfterTaxValue * item.quantity > 0) {
-                    profitPercentCell.innerHTML = '<span class="profit">+∞%</span>'; // Infinite profit if investment is 0 and current value is positive
+                    profitPercentCell.innerHTML = '<span class="profit">+∞% 🔥</span>'; // Infinite profit if investment is 0 and current value is positive
                 } else {
                     profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
                 }
@@ -1343,9 +1368,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const profitLoss = potentialSaleAfterTax - totalInvestment;
                     const profitPercent = (profitLoss / totalInvestment) * 100;
                     const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
-                    profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%</span>`;
+                    let profitPercentDisplay = `${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%`;
+                    if (profitPercent > 30) {
+                        profitPercentDisplay += ' 🔥';
+                    }
+                    profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercentDisplay}</span>`;
                 } else if (totalInvestment === 0 && priceAfterTax * item.quantity > 0) { // check priceAfterTax directly
-                     profitPercentCell.innerHTML = '<span class="profit">+∞%</span>';
+                     profitPercentCell.innerHTML = '<span class="profit">+∞% 🔥</span>';
                 }
                 else {
                     profitPercentCell.innerHTML = '<span class="neutral">N/A</span>';
