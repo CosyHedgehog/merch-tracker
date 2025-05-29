@@ -768,7 +768,7 @@ button:disabled {
   text-align: center;
   padding: var(--spacing-xl) !important;
   color: var(--text-muted);
-  height: 150px;
+  height: 200px;
   vertical-align: middle;
 }
 
