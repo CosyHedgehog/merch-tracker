@@ -1124,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    itemNameInput.addEventListener('keydown', async (e) => {
+    itemNameInput.addEventListener('keydown', async (e) => { 
         const items = itemDropdown.querySelectorAll('.dropdown-item');
         
         switch (e.key) {
@@ -1139,12 +1139,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 highlightItem(selectedIndex);
                 break;
             case 'Enter':
-                e.preventDefault();
+                console.log('itemNameInput Enter: Handling dropdown selection.');
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                e.dropdownHandled = true; // Set a flag on the event object
+                
                 if (selectedIndex >= 0 && filteredItems[selectedIndex]) {
                     await selectItem(filteredItems[selectedIndex]);
+                    console.log('itemNameInput Enter: selectItem finished.');
+                    return; 
                 }
+                console.log('itemNameInput Enter: No item selected in dropdown.');
                 break;
             case 'Escape':
+                e.preventDefault(); // Also good to prevent default for Escape
+                e.stopPropagation(); // And stop propagation
                 hideDropdown();
                 break;
         }
@@ -1405,17 +1414,28 @@ document.addEventListener('DOMContentLoaded', () => {
     [itemNameInput, purchasePriceInput, quantityInput].forEach(input => {
         input.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter') {
-                e.preventDefault();
-                // Ensure that if the enter is pressed on itemNameInput and dropdown is open,
-                // we select the item first, then the user can press enter again to submit.
-                // The existing keydown listener for itemNameInput already handles selecting from dropdown.
-                if (document.activeElement === itemNameInput && itemDropdown.classList.contains('show')) {
-                    // If dropdown is open and focused on item name, let existing handler work
-                    return; 
+                // If the event was already handled by the dropdown logic, do nothing further.
+                if (e.dropdownHandled) {
+                    console.log('General Enter: Event already handled by dropdown. Ignoring.');
+                    return;
                 }
-                // If error message is not active, then close modal after adding item.
-                // Simulating the button click will also trigger the closeModal if no error.
-                if (!isReadOnlyMode) addItemBtn.click(); 
+
+                console.log('General Enter listener fired. Active element:', document.activeElement.id, 'Dropdown open:', itemDropdown.classList.contains('show'));
+
+                // Only submit if the active element is the purchase price or quantity input
+                if (document.activeElement === purchasePriceInput || document.activeElement === quantityInput) {
+                    console.log('General Enter: Submitting from price/quantity.');
+                    e.preventDefault(); // Ensure default is prevented here too
+                    if (!isReadOnlyMode) {
+                        addItemBtn.click();
+                    }
+                } 
+                else if (document.activeElement === itemNameInput) {
+                    // This case should ideally not be hit for submitting if dropdownHandled works,
+                    // but as a fallback, prevent default.
+                    console.log('General Enter: Active on itemNameInput (event not dropdownHandled). Preventing default.');
+                    e.preventDefault(); 
+                }
             }
         });
     });
