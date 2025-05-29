@@ -820,7 +820,7 @@ button:disabled {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
-  max-width: 500px;
+  max-width: 450px;
   margin: var(--spacing-md); /* Let flexbox handle centering, this provides spacing from viewport edges if modal is large */
   box-shadow: var(--shadow-xl);
   z-index: 1001; /* Ensure modal content is above backdrop */
