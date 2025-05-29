@@ -512,10 +512,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const originalPlaceholder = purchasePriceInput.placeholder;
         purchasePriceInput.placeholder = 'Fetching price...';
-        purchasePriceInput.value = ''; // Clear previous value
-        purchasePriceInput.disabled = true; // Disable while fetching
+        purchasePriceInput.value = ''; // Clear previous value visually for loading indication
+        purchasePriceInput.disabled = true;
 
-        let priceToSet = '';
+        let priceFetchedSuccessfully = false;
 
         try {
             let itemPriceSourceData = null;
@@ -533,15 +533,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (itemPriceSourceData) {
                 const currentAvgPrice = getCurrentPrice(item.id, itemPriceSourceData);
-                if (currentAvgPrice !== null) {
-                    priceToSet = currentAvgPrice.toString();
-                }
+                purchasePriceInput.value = formatCurrency(currentAvgPrice);
+                priceFetchedSuccessfully = true; // Consider it successful even if price is 0 (from null)
+            } else {
+                // If no price source data at all (e.g., API fetch failed and cache was empty)
+                purchasePriceInput.value = '0'; // Default to 0 if data source fails
+                priceFetchedSuccessfully = true; // Still mark as handled to prevent override in finally
             }
         } catch (error) {
             console.error(`Error fetching price for ${item.name}:`, error);
-            // Optionally, display a user-friendly error message here
+            purchasePriceInput.value = '0'; // Default to 0 on error
+            priceFetchedSuccessfully = true; // Mark as handled
         } finally {
-            purchasePriceInput.value = priceToSet;
+            // The value is now set directly within try/catch if successful or to '0' on failure.
+            // If for some reason it was not handled (e.g. an unexpected path not setting priceFetchedSuccessfully)
+            // this could be a fallback, but current logic should cover it.
+            if (!priceFetchedSuccessfully) {
+                 purchasePriceInput.value = '0'; // Fallback, though should be covered above.
+            }
             purchasePriceInput.placeholder = originalPlaceholder;
             purchasePriceInput.disabled = false;
             purchasePriceInput.focus();
@@ -858,8 +867,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function addItem() {
         displayError('');
         const name = itemNameInput.value.trim();
-        const purchasePrice = parseFloat(purchasePriceInput.value.replace(/,/g, ''));
-        const quantity = parseInt(quantityInput.value.replace(/,/g, ''), 10);
+        const purchasePriceString = purchasePriceInput.value.replace(/,/g, ''); // Remove commas
+        const quantityString = quantityInput.value.replace(/,/g, ''); // Remove commas
+
+        const purchasePrice = parseFloat(purchasePriceString);
+        const quantity = parseInt(quantityString, 10);
 
         if (!name || isNaN(purchasePrice) || purchasePrice <= 0 || isNaN(quantity) || quantity <= 0) {
             displayError('Please enter a valid item name, purchase price, and quantity.');
@@ -951,8 +963,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         editingItemId = uniqueId;
         document.getElementById('edit-modal-item-name-display').textContent = item.name;
-        document.getElementById('edit-purchase-price').value = item.purchasePrice;
-        document.getElementById('edit-quantity').value = item.quantity;
+        document.getElementById('edit-purchase-price').value = formatCurrency(item.purchasePrice); // Format with commas
+        document.getElementById('edit-quantity').value = formatCurrency(item.quantity); // Format with commas
         
         displayEditError('');
         editItemModal.style.display = 'flex';
@@ -1040,8 +1052,11 @@ document.addEventListener('DOMContentLoaded', () => {
     saveItemBtn.addEventListener('click', async () => {
         if (!editingItemId) return;
 
-        const purchasePrice = parseFloat(document.getElementById('edit-purchase-price').value.replace(/,/g, ''));
-        const quantity = parseInt(document.getElementById('edit-quantity').value.replace(/,/g, ''), 10);
+        const purchasePriceString = document.getElementById('edit-purchase-price').value.replace(/,/g, ''); // Remove commas
+        const quantityString = document.getElementById('edit-quantity').value.replace(/,/g, ''); // Remove commas
+
+        const purchasePrice = parseFloat(purchasePriceString);
+        const quantity = parseInt(quantityString, 10);
 
         if (isNaN(purchasePrice) || purchasePrice <= 0 || isNaN(quantity) || quantity <= 0) {
             displayEditError('Please enter valid purchase price and quantity.');
@@ -1769,6 +1784,41 @@ document.addEventListener('DOMContentLoaded', () => {
         shareBtn.addEventListener('click', generateShareableLink);
     }
     // --- END SHAREABLE LINK FUNCTIONALITY ---
+
+    // Helper function to format input value with commas on blur
+    function formatInputWithCommasOnBlur(inputElement) {
+        inputElement.addEventListener('blur', () => {
+            let valueToSet = inputElement.value; // Start with current value
+            const valueString = inputElement.value.replace(/,/g, '');
+            const numberValue = parseFloat(valueString);
+
+            if (!isNaN(numberValue)) {
+                if (inputElement.id === 'quantity' || inputElement.id === 'edit-quantity') {
+                    if (Number.isInteger(parseFloat(valueString))) {
+                        valueToSet = formatCurrency(parseInt(numberValue, 10));
+                    } else {
+                        // If user entered decimals for quantity, validation should catch it.
+                        // We format what they entered or default to 0 if it becomes NaN after specific parsing.
+                        const intVal = parseInt(numberValue, 10);
+                        valueToSet = formatCurrency(isNaN(intVal) ? 0 : intVal); 
+                    }
+                } else { // For purchase price
+                    valueToSet = formatCurrency(numberValue);
+                }
+            } else if (inputElement.value.trim() !== '') {
+                // If it's not a valid number but was not empty, set to '0'
+                valueToSet = '0';
+            } // If it was empty or just whitespace, do nothing (let placeholder show or be empty)
+            
+            inputElement.value = valueToSet;
+        });
+    }
+
+    // Apply auto-formatting to relevant input fields
+    formatInputWithCommasOnBlur(purchasePriceInput);
+    formatInputWithCommasOnBlur(quantityInput);
+    formatInputWithCommasOnBlur(document.getElementById('edit-purchase-price'));
+    formatInputWithCommasOnBlur(document.getElementById('edit-quantity'));
 
     // Initial load
     loadItemMapping().then(async () => {
