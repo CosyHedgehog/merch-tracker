@@ -332,6 +332,12 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryItemsEl.textContent = '0';
             summaryPlEl.textContent = '0';
             summaryPlEl.className = 'summary-pl';
+
+            // Ensure container class is also reset for 0 items
+            const profitLossContainer = document.getElementById('total-profit-loss-container');
+            if (profitLossContainer) {
+                profitLossContainer.className = 'stat-value';
+            }
             return;
         }
 
@@ -371,23 +377,40 @@ document.addEventListener('DOMContentLoaded', () => {
             currentValueEl.textContent = formatCurrency(totalCurrentValue);
             
             totalProfitLossEl.textContent = formatCurrency(totalProfitLoss);
-            totalProfitLossEl.className = totalProfitLoss > 0 ? 'stat-value profit' : 
-                                          totalProfitLoss < 0 ? 'stat-value loss' : 'stat-value';
+            totalProfitLossEl.className = ''; // Clear any direct classes on the span
+
+            const profitLossContainer = document.getElementById('total-profit-loss-container');
+            if (profitLossContainer) {
+                profitLossContainer.className = 'stat-value'; // Reset to base class
+                if (totalProfitLoss > 0) {
+                    profitLossContainer.classList.add('profit');
+                } else if (totalProfitLoss < 0) {
+                    profitLossContainer.classList.add('loss');
+                }
+            }
             
             // Update percentage display
             if (totalInvestment !== 0) {
                 totalProfitLossPercentEl.textContent = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
-                totalProfitLossPercentEl.className = profitPercent > 0 ? 'profit-loss-percent-stat profit' :
-                                                  profitPercent < 0 ? 'profit-loss-percent-stat loss' : 'profit-loss-percent-stat';
+                totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
+                if (profitPercent > 0) {
+                    totalProfitLossPercentEl.classList.add('profit');
+                } else if (profitPercent < 0) {
+                    totalProfitLossPercentEl.classList.add('loss');
+                }
             } else {
                 totalProfitLossPercentEl.textContent = '';
-                totalProfitLossPercentEl.className = 'profit-loss-percent-stat';
+                totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset to base
             }
 
             summaryItemsEl.textContent = items.length.toString();
             summaryPlEl.textContent = formatCurrency(totalProfitLoss);
-            summaryPlEl.className = totalProfitLoss > 0 ? 'summary-pl profit' : 
-                                   totalProfitLoss < 0 ? 'summary-pl loss' : 'summary-pl';
+            summaryPlEl.className = 'summary-pl'; // Reset base class
+            if (totalProfitLoss > 0) {
+                summaryPlEl.classList.add('profit');
+            } else if (totalProfitLoss < 0) {
+                summaryPlEl.classList.add('loss');
+            }
         }).catch(error => {
             console.error("Error updating stats for items:", error);
             // Potentially display a muted error or rely on N/A values in table
@@ -723,6 +746,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             await updateStatistics(); // This uses item.currentPrice from trackedItems, which is now fresh
         }
+
+        if (searchQuery.trim()) {
+            filterTableRowsVisual();
+        }
     }
 
     async function addItem() {
@@ -933,10 +960,9 @@ document.addEventListener('DOMContentLoaded', () => {
             await renderItems(false);
             closeEditModal();
 
-            // Re-apply search filter and update stats if a search query exists
+            // Re-apply search filter if a search query exists
             if (searchQuery.trim()) {
                 filterTableRowsVisual();
-                updateSearchStatistics(getFilteredItems());
             }
         }
     });
