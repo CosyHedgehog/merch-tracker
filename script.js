@@ -1111,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const purchasePrice = parseFloat(purchasePriceString);
         const quantity = parseInt(quantityString, 10);
 
-        if (isNaN(purchasePrice) || purchasePrice <= 0 || isNaN(quantity) || quantity <= 0) {
+        if (isNaN(purchasePrice) || purchasePrice <= 0 || isNaN(quantity)) {
             displayEditError('Please enter valid purchase price and quantity.');
             return;
         }
