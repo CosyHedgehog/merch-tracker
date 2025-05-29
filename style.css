@@ -968,6 +968,9 @@ input::placeholder {
   cursor: pointer;
   transition: background-color var(--transition-fast);
   border-bottom: 1px solid var(--border-color);
+  display: flex; /* Align icon and text */
+  align-items: center;
+  gap: var(--spacing-sm); /* Space between icon and text */
 }
 
 .dropdown-item:last-child {
@@ -982,6 +985,13 @@ input::placeholder {
 .dropdown-item.selected {
   background: var(--accent-primary);
   color: white;
+}
+
+.dropdown-item-icon {
+  width: 24px; /* Adjust size as needed */
+  height: 24px;
+  object-fit: contain; /* Or 'cover', depending on desired scaling */
+  flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 /* Add subtle animation when typing */
@@ -1353,4 +1363,11 @@ input::placeholder {
   #actions-dropdown-btn {
     height: 2.75rem;
   }
+}
+
+.modal-item-icon {
+    width: 100%; /* Fill the container */
+    height: 100%;
+    object-fit: contain;
+    border-radius: var(--radius-sm); /* Optional: slight rounding for the icon itself */
 } 

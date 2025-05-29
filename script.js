@@ -492,7 +492,20 @@ document.addEventListener('DOMContentLoaded', () => {
         items.forEach((item, index) => {
             const div = document.createElement('div');
             div.classList.add('dropdown-item');
-            div.textContent = item.name;
+            // div.textContent = item.name; // We will set text content after adding the icon
+
+            if (item.icon) {
+                const iconImg = document.createElement('img');
+                iconImg.src = `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
+                iconImg.alt = item.name; // Alt text is good practice
+                iconImg.classList.add('dropdown-item-icon');
+                div.appendChild(iconImg);
+            }
+
+            const itemNameSpan = document.createElement('span');
+            itemNameSpan.textContent = item.name;
+            div.appendChild(itemNameSpan);
+
             div.addEventListener('click', async () => await selectItem(item));
             itemDropdown.appendChild(div);
         });
@@ -962,6 +975,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!item) return;
 
         editingItemId = uniqueId;
+
+        // Display item icon in Edit Item Modal
+        const editModalIconContainer = document.getElementById('edit-modal-item-icon-container');
+        editModalIconContainer.innerHTML = ''; // Clear previous icon
+        if (item.icon) {
+            const iconImg = document.createElement('img');
+            iconImg.src = `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
+            iconImg.alt = item.name;
+            iconImg.classList.add('modal-item-icon');
+            editModalIconContainer.appendChild(iconImg);
+        }
+
         document.getElementById('edit-modal-item-name-display').textContent = item.name;
         document.getElementById('edit-purchase-price').value = formatCurrency(item.purchasePrice); // Format with commas
         document.getElementById('edit-quantity').value = formatCurrency(item.quantity); // Format with commas
@@ -974,6 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeEditModal() {
         editItemModal.style.display = 'none';
         editingItemId = null;
+        document.getElementById('edit-modal-item-icon-container').innerHTML = ''; // Clear icon
         displayEditError('');
     }
 

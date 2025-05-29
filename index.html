@@ -66,7 +66,7 @@
                 <div class="modal-body">
                     <div id="add-item-form">
                         <div class="form-group item-search-group">
-                            <label for="item-name">Item Name</label>
+                            <label for="item-name">Item Name</label> 
                             <div class="custom-dropdown">
                                 <input type="text" id="item-name" placeholder="Search for an item..." autocomplete="off">
                                 <div id="item-dropdown" class="dropdown-list">
@@ -99,7 +99,12 @@
             <div class="modal-backdrop"></div>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Edit Item: <span id="edit-modal-item-name-display"></span></h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2>Edit Item: 
+                            <span id="edit-modal-item-icon-container" style="width: 24px; height: 24px; display: inline-flex; vertical-align: middle; margin-right: 8px;"></span>
+                            <span id="edit-modal-item-name-display"></span>
+                        </h2>
+                    </div>
                     <button class="close-btn" type="button">&times;</button>
                 </div>
                 <div class="modal-body">
