@@ -424,6 +424,14 @@ body {
   padding-left: 1.25rem;
 }
 
+/* Ensure refresh button in dropdown has correct background */
+#actions-dropdown-content #refresh-prices-btn.dropdown-item-btn {
+  background: transparent; /* Default for dropdown items */
+}
+#actions-dropdown-content #refresh-prices-btn.dropdown-item-btn:hover {
+  background: var(--bg-tertiary); /* Hover for dropdown items */
+}
+
 .dropdown-item-btn .btn-icon {
   font-size: 1rem; /* Slightly larger icons in dropdown */
   width: 1rem;
@@ -1090,10 +1098,9 @@ input::placeholder {
   }
   
   .section-header {
-    flex-direction: row; /* Changed from column */
-    align-items: center; /* Changed from stretch */
-    justify-content: space-between; /* Added */
-    gap: var(--spacing-sm); /* Maintained, now for horizontal spacing */
+    flex-direction: column; /* Stack title and controls vertically */
+    align-items: flex-start; /* Align items to the start */
+    gap: var(--spacing-md); /* Increased gap for better separation */
     padding: var(--spacing-md);
     position: sticky;
     top: 0;
@@ -1102,12 +1109,14 @@ input::placeholder {
 
   .section-header h2 {
     flex-shrink: 0; /* Prevent title from shrinking */
+    margin-bottom: var(--spacing-sm); /* Add some space below the title */
   }
 
   .portfolio-controls {
-    flex-direction: row; /* Changed from column */
-    align-items: center; /* Added */
-    gap: var(--spacing-sm); /* Maintained, now for horizontal spacing */
+    flex-direction: column; /* Stack search and actions vertically */
+    align-items: stretch; /* Stretch items to full width */
+    gap: var(--spacing-md); /* Increased gap */
+    width: 100%; /* Make controls take full width */
   }
 
   .modal-header,
@@ -1119,6 +1128,7 @@ input::placeholder {
     max-width: none;
     order: initial; /* Changed from 2 */
     flex-grow: 1; /* Allow search to take available space */
+    width: 100%; /* Ensure search takes full width */
   }
 
   .section-actions {
@@ -1126,6 +1136,8 @@ input::placeholder {
     flex-wrap: nowrap; /* Changed from wrap to keep buttons on one line */
     gap: var(--spacing-sm); /* Maintained from mobile-specific styles */
     flex-shrink: 0; /* Ensure buttons container doesn't shrink */
+    width: 100%; /* Make action buttons container take full width */
+    justify-content: space-between; /* Distribute buttons evenly */
   }
 
   .items-section {
@@ -1362,6 +1374,17 @@ input::placeholder {
 @media (min-width: 769px) {
   #actions-dropdown-btn {
     height: 2.75rem;
+  }
+  #refresh-prices-btn {
+    color: var(--bg-secondary);
+    /* Styles for desktop standalone refresh button */
+    padding: 0.75rem; /* Adjust padding for icon-only button */
+    line-height: 1;
+    background: var(--bg-tertiary); /* Match actions dropdown button style */
+  }
+  #refresh-prices-btn:hover {
+    box-shadow: var(--shadow-md);
+    background: var(--bg-card); /* Match actions dropdown button hover */
   }
 }
 

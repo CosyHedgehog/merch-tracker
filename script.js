@@ -1126,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshPricesBtn.addEventListener('click', async () => {
         displayError('');
         refreshPricesBtn.disabled = true;
-        refreshPricesBtn.innerHTML = '<span class="btn-icon">⏳</span>Refresh';
+        refreshPricesBtn.innerHTML = '<span class="btn-icon">⏳</span>'; // Changed this line
         refreshPricesBtn.classList.add('loading');
         
         try {
@@ -1134,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await renderItems();
         } finally {
             refreshPricesBtn.disabled = false;
-            refreshPricesBtn.innerHTML = '<span class="btn-icon">🔄</span>Refresh';
+            refreshPricesBtn.innerHTML = '<span class="btn-icon">🔄</span>'; // Changed this line
             refreshPricesBtn.classList.remove('loading');
         }
     });
