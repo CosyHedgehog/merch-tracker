@@ -313,141 +313,8 @@ body {
 
 .section-actions {
   display: flex;
-  gap: var(--spacing-md);
-  flex-shrink: 0;
-}
-
-/* Styling for the new Actions Dropdown */
-.actions-dropdown {
-  position: relative;
-}
-
-#actions-dropdown-btn {
-  /* Match other secondary buttons or define specific style */
-  padding: 0.75rem; /* Adjust padding for a more square/icon-focused button */
-  line-height: 1; /* Helps center the icon if it's an inline element */
-  position: relative;
-  transition: all var(--transition-fast);
-  background: var(--bg-tertiary);
-}
-
-#actions-dropdown-btn:hover {
-  /* transform: translateY(-1px); */
-  box-shadow: var(--shadow-md);
-  background: var(--bg-card);
-}
-
-#actions-dropdown-btn.open {
-  /* background: var(--accent-primary); */
-  color: white;
-  border-color: var(--accent-primary);
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 5px); /* Position below the button with a small gap */
-  background: var(--bg-secondary);
-  min-width: 170px; /* Increased from 100px */
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  z-index: 150; /* Ensure it's above other elements in this section */
-  overflow: hidden;
-  opacity: 0;
-  /* transform: translateY(-10px) scale(0.95); */
-  pointer-events: none;
-  transition: all var(--transition-normal);
-}
-
-.dropdown-content::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  right: 12px;
-  width: 12px;
-  height: 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-bottom: none;
-  border-right: none;
-  transform: rotate(45deg);
-  z-index: -1;
-}
-
-.dropdown-content.show {
-  display: block;
-  opacity: 1;
-  /* transform: translateY(0) scale(1); */
-  pointer-events: auto;
-  /* animation: dropdownSlideIn 0.2s ease-out; */
-}
-
-@keyframes dropdownSlideIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.dropdown-item-btn {
-  width: 100%;
-  text-align: left;
-  padding: 0.75rem 1rem;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  display: flex; /* To align icon and text */
-  align-items: center;
   gap: var(--spacing-sm);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all var(--transition-fast);
-  position: relative;
-  cursor: pointer;
-  font-family: inherit;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.dropdown-item-btn:last-child {
-  border-bottom: none;
-}
-
-.dropdown-item-btn:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  padding-left: 1.25rem;
-}
-
-/* Ensure refresh button in dropdown has correct background */
-#actions-dropdown-content #refresh-prices-btn.dropdown-item-btn {
-  background: transparent; /* Default for dropdown items */
-}
-#actions-dropdown-content #refresh-prices-btn.dropdown-item-btn:hover {
-  background: var(--bg-tertiary); /* Hover for dropdown items */
-}
-
-.dropdown-item-btn .btn-icon {
-  font-size: 1rem; /* Slightly larger icons in dropdown */
-  width: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-}
-
-.dropdown-item-btn.btn-danger-style {
-  border-top: 1px solid var(--border-color);
-}
-
-
-.dropdown-item-btn.btn-danger-style .btn-icon {
-  color: var(--error);
 }
 
 /* ===== BUTTONS ===== */
@@ -489,16 +356,16 @@ button {
 
 .btn-secondary,
 #refresh-prices-btn {
-  /* background: var(--bg-tertiary); */
+  background: var(--bg-tertiary);
   color: var(--text-primary);
-  /* border: 1px solid var(--border-color); */
+  border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover,
 #refresh-prices-btn:hover {
-  background: var(--border-color);
+  background: var(--bg-card);
   border-color: var(--border-hover);
-  /* transform: translateY(-1px); */
+  box-shadow: var(--shadow-md);
 }
 
 .remove-btn {
@@ -506,23 +373,11 @@ button {
   color: white !important;
   padding: 0.5rem 1rem !important;
   font-size: 0.75rem !important;
+  box-shadow: var(--shadow-md);
 }
 
 .remove-btn:hover {
   background: var(--accent-danger-hover) !important;
-}
-
-.btn-danger-style {
-  background-color: var(--accent-danger);
-  color: white;
-  border: 1px solid var(--accent-danger);
-}
-
-.btn-danger-style:hover {
-  background-color: var(--accent-danger-hover);
-  border-color: var(--accent-danger-hover);
-  /* transform: translateY(-1px); */
-  box-shadow: var(--shadow-md);
 }
 
 button:disabled {
@@ -533,6 +388,12 @@ button:disabled {
 
 .btn-icon {
   font-size: 1rem;
+}
+
+.btn-icon-only {
+    padding: 0.75rem;
+    gap: 0;
+    line-height: 1;
 }
 
 /* ===== TABLE ===== */
@@ -1230,6 +1091,14 @@ input::placeholder {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     white-space: nowrap; /* Prevent label wrapping */
+  }
+  
+  #show-add-item-modal-btn .btn-text {
+      display: none;
+  }
+  
+  #show-add-item-modal-btn {
+      gap: 0;
   }
   
   /* Special handling for the item cell (icon and name) */
