@@ -415,6 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let profitDisplay = formatCurrency(totalProfitLoss);
             if (profitPercent > 30) {
                 profitDisplay += ' 🔥';
+            } else if (profitPercent <= -30) {
+                profitDisplay += ' 💩';
             }
             totalProfitLossEl.textContent = profitDisplay; // Use profitDisplay here
             totalProfitLossEl.className = ''; // Clear any direct classes on the span
@@ -434,6 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 let percentDisplay = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
                 if (profitPercent > 30) {
                     percentDisplay += ' 🔥';
+                } else if (profitPercent <= -30) {
+                    percentDisplay += ' 💩';
                 }
                 totalProfitLossPercentEl.textContent = percentDisplay;
                 totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
@@ -643,6 +647,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let percentDisplay = `(${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%)`;
             if (profitPercent > 30) {
                 percentDisplay += ' 🔥';
+            } else if (profitPercent <= -30) {
+                percentDisplay += ' 💩';
             }
             totalProfitLossPercentEl.textContent = percentDisplay;
             totalProfitLossPercentEl.className = 'profit-loss-percent-stat'; // Reset base class
@@ -845,6 +851,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     let profitPercentDisplay = `${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%`;
                     if (profitPercent > 30) {
                         profitPercentDisplay += ' 🔥';
+                    } else if (profitPercent <= -30) {
+                        profitPercentDisplay += ' 💩';
                     }
                     profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercentDisplay}</span>`;
                 } else if (totalInvestmentForItem === 0 && item.currentPrice !== null && typeof item.currentPrice === 'number' ){
@@ -1371,6 +1379,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     let profitPercentDisplay = `${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%`;
                     if (profitPercent > 30) {
                         profitPercentDisplay += ' 🔥';
+                    } else if (profitPercent <= -30) {
+                        profitPercentDisplay += ' 💩';
                     }
                     profitPercentCell.innerHTML = `<span class="${percentClass}">${profitPercentDisplay}</span>`;
                 } else if (totalInvestment === 0 && priceAfterTax * item.quantity > 0) { // check priceAfterTax directly
