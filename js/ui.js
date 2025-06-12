@@ -2,6 +2,7 @@ import { elements } from './dom.js';
 import { formatCurrency, calculatePriceAfterTax } from './utils.js';
 import { OSRS_WIKI_IMG_BASE_URL } from './config.js';
 import { getState } from './state.js';
+import { getCachedImage, updateImageCache } from './imageCache.js';
 
 let filteredItems = [];
 let selectedIndex = -1;
@@ -48,11 +49,12 @@ export function renderItems(items, pricesData) {
 
         const currentPrice = getCurrentPrice(item.id, pricesData);
         const priceAfterTax = calculatePriceAfterTax(currentPrice);
+        const iconSrc = getCachedImage(item.icon) || `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
 
         tr.innerHTML = `
             <td data-label="Item">
                 <div class="item-cell">
-                    <img src="${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}" alt="${item.name}" class="item-icon">
+                    <img src="${iconSrc}" alt="${item.name}" class="item-icon">
                     <span class="item-name">${item.name}</span>
                     <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="wiki-link-icon" title="View ${item.name} on OSRS Wiki">🔗</a>
                 </div>
@@ -74,6 +76,9 @@ export function renderItems(items, pricesData) {
         }
         elements.itemListBody.appendChild(tr);
     });
+
+    // Trigger background caching for any images that weren't in the cache
+    updateImageCache(items);
 }
 
 function generateProfitLossCells(item, currentPrice) {
@@ -185,10 +190,13 @@ export function openEditModal(item) {
     elements.editModalIconContainer.innerHTML = '';
     if (item.icon) {
         const iconImg = document.createElement('img');
-        iconImg.src = `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
+        const iconSrc = getCachedImage(item.icon) || `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
+        iconImg.src = iconSrc;
         iconImg.alt = item.name;
         iconImg.classList.add('modal-item-icon');
         elements.editModalIconContainer.appendChild(iconImg);
+        // Trigger caching for this single item
+        updateImageCache([item]);
     }
     
     displayError('', true);
@@ -211,8 +219,9 @@ export function showDropdown(items) {
     items.forEach(item => {
         const div = document.createElement('div');
         div.classList.add('dropdown-item');
+        const iconSrc = getCachedImage(item.icon) || `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
         div.innerHTML = `
-            ${item.icon ? `<img src="${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}" alt="${item.name}" class="dropdown-item-icon">` : ''}
+            ${item.icon ? `<img src="${iconSrc}" alt="${item.name}" class="dropdown-item-icon">` : ''}
             <span>${item.name}</span>
         `;
         div.addEventListener('click', () => {
@@ -223,6 +232,9 @@ export function showDropdown(items) {
     });
     elements.itemDropdown.classList.add('show');
     selectedIndex = -1;
+
+    // Trigger background caching for dropdown items
+    updateImageCache(items);
 }
 
 export function hideDropdown() {
