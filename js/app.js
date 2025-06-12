@@ -21,7 +21,11 @@ async function refreshTable(showLoading = true) {
 
     const { trackedItems, cachedLatestPrices } = state.getState();
     ui.renderItems(trackedItems, cachedLatestPrices);
-    ui.updateStatistics(state.getFilteredItems(), cachedLatestPrices);
+    
+    // Re-apply visual search filter after table is rendered
+    const filteredItems = state.getFilteredItems();
+    ui.filterTableRowsVisual(filteredItems);
+    ui.updateStatistics(filteredItems, cachedLatestPrices);
     
     if (showLoading) {
         await new Promise(resolve => setTimeout(resolve, 500)); // Prevent loading flicker
