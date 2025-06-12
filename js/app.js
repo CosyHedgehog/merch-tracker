@@ -46,6 +46,11 @@ async function sortAndRerender(column) {
     const { trackedItems, cachedLatestPrices } = state.getState();
     ui.renderItems(trackedItems, cachedLatestPrices);
     ui.updateSortIndicators(column, direction);
+
+    // Re-apply search filter after sorting to maintain view
+    const filteredItems = state.getFilteredItems();
+    ui.filterTableRowsVisual(filteredItems);
+    ui.updateStatistics(filteredItems, cachedLatestPrices);
 }
 
 function handleAddItem() {
