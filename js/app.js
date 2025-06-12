@@ -6,15 +6,17 @@ import { formatCurrency, calculatePriceAfterTax, parseCSV, isValidImportedItem }
 
 let searchDebounceTimer = null;
 
-async function refreshTable(showLoading = true) {
+async function refreshTable(showLoading = true, forceFetch = false) {
     if (showLoading) ui.showTableLoading();
     
-    try {
-        const prices = await api.getLatestPrices();
-        state.setCachedPrices(prices);
-    } catch (error) {
-        ui.displayError('Could not fetch latest prices. Data may be inaccurate.');
-        state.setCachedPrices(null); // Clear stale prices
+    if (forceFetch || !state.getState().cachedLatestPrices) {
+        try {
+            const prices = await api.getLatestPrices();
+            state.setCachedPrices(prices);
+        } catch (error) {
+            ui.displayError('Could not fetch latest prices. Data may be inaccurate.');
+            state.setCachedPrices(null); // Clear stale prices
+        }
     }
 
     state.sortTrackedItems(); // Sort before rendering
@@ -266,7 +268,7 @@ function setupEventListeners() {
     elements.addItemBtn.addEventListener('click', handleAddItem);
     elements.saveItemBtn.addEventListener('click', handleSaveItem);
     elements.deleteItemBtn.addEventListener('click', handleDeleteItem);
-    elements.refreshPricesBtn.addEventListener('click', () => refreshTable(true));
+    elements.refreshPricesBtn.addEventListener('click', () => refreshTable(true, true));
     elements.portfolioSearchInput.addEventListener('input', handleSearch);
     elements.clearSearchBtn.addEventListener('click', clearSearch);
     elements.exportBtn.addEventListener('click', handleExport);
@@ -405,7 +407,7 @@ async function init() {
         state.loadItems();
     }
 
-    await refreshTable(true);
+    await refreshTable(true, true);
     ui.updateSortIndicators(state.getState().currentSort.column, state.getState().currentSort.direction);
     setupEventListeners();
 }
