@@ -1289,6 +1289,20 @@ input::placeholder {
     animation: fiery-animation 1s ease-in-out infinite;
 }
 
+.scalable-text {
+    display: inline-block;
+    transition: transform 0.2s ease-out, font-weight 0.2s ease-out;
+}
+
+.item-name.scalable-text {
+    display: block;
+}
+
+#item-table tbody tr:hover .scalable-text {
+    font-weight: 700;
+    transform: scale(1.08);
+}
+
 /* ===== UTILITIES ===== */
 .sr-only {
   position: absolute;

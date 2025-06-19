@@ -63,7 +63,7 @@ export function renderItems(items, pricesData) {
                 <div class="item-cell">
                     <div class="item-info">
                         <img src="${iconSrc}" alt="${item.name}" class="item-icon">
-                        <span class="item-name">${item.name}</span>
+                        <span class="item-name scalable-text">${item.name}</span>
                         <div class="item-actions">
                             <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View price data for ${item.name}">Price</a>
                             <a href="https://oldschool.runescape.wiki/w/Special:Lookup?type=item&id=${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View ${item.name} on OSRS Wiki">Wiki</a>
@@ -72,11 +72,11 @@ export function renderItems(items, pricesData) {
                     </div>
                 </div>
             </td>
-            <td data-label="Price"><span class="currency">${formatCurrency(item.purchasePrice)}</span></td>
-            <td data-label="Qty"><span class="currency">${item.quantity.toLocaleString()}</span></td>
-            <td data-label="Investment"><span class="currency">${formatCurrency(item.purchasePrice * item.quantity)}</span></td>
-            <td data-label="Curr Price">${currentPrice !== null ? `<span class="currency">${formatCurrency(currentPrice)}</span>` : '<span class="text-muted">N/A</span>'}</td>
-            <td data-label="Price - Tax">${priceAfterTax !== null ? `<span class="currency">${formatCurrency(priceAfterTax)}</span>` : '<span class="text-muted">N/A</span>'}</td>
+            <td data-label="Price"><span class="currency scalable-text">${formatCurrency(item.purchasePrice)}</span></td>
+            <td data-label="Qty"><span class="currency scalable-text">${item.quantity.toLocaleString()}</span></td>
+            <td data-label="Investment"><span class="currency scalable-text">${formatCurrency(item.purchasePrice * item.quantity)}</span></td>
+            <td data-label="Curr Price">${currentPrice !== null ? `<span class="currency scalable-text">${formatCurrency(currentPrice)}</span>` : '<span class="text-muted">N/A</span>'}</td>
+            <td data-label="Price - Tax">${priceAfterTax !== null ? `<span class="currency scalable-text">${formatCurrency(priceAfterTax)}</span>` : '<span class="text-muted">N/A</span>'}</td>
             ${generateProfitLossCells(item, currentPrice)}
         `;
 
@@ -108,7 +108,7 @@ function generateProfitLossCells(item, currentPrice) {
     const potentialSaleAfterTax = priceAfterTaxValue * item.quantity;
     const profitLoss = potentialSaleAfterTax - totalInvestmentForItem;
     const profitClass = profitLoss > 0 ? 'profit' : (profitLoss < 0 ? 'loss' : 'neutral');
-    const profitLossCell = `<td data-label="Profit"><span class="${profitClass} currency">${formatCurrency(profitLoss)}</span></td>`;
+    const profitLossCell = `<td data-label="Profit"><span class="${profitClass} currency scalable-text">${formatCurrency(profitLoss)}</span></td>`;
 
     let profitPercentCell;
     if (totalInvestmentForItem !== 0) {
@@ -117,11 +117,11 @@ function generateProfitLossCells(item, currentPrice) {
         let profitPercentDisplay = `${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%`;
         if (profitPercent > 30) profitPercentDisplay += ' <span class="profit-emoji fire-emoji">🔥</span>';
         else if (profitPercent <= -30) profitPercentDisplay += ' <span class="profit-emoji poop-emoji">💩</span>';
-        profitPercentCell = `<td data-label="%"><span class="${percentClass}">${profitPercentDisplay}</span></td>`;
+        profitPercentCell = `<td data-label="%"><span class="${percentClass} scalable-text">${profitPercentDisplay}</span></td>`;
     } else if (potentialSaleAfterTax > 0) {
-        profitPercentCell = `<td data-label="%"><span class="profit">+∞% <span class="profit-emoji fire-emoji">🔥</span></span></td>`;
+        profitPercentCell = `<td data-label="%"><span class="profit scalable-text">+∞% <span class="profit-emoji fire-emoji">🔥</span></span></td>`;
     } else {
-        profitPercentCell = `<td data-label="%"><span class="neutral">N/A</span></td>`;
+        profitPercentCell = `<td data-label="%"><span class="neutral scalable-text">N/A</span></td>`;
     }
 
     return profitLossCell + profitPercentCell;
