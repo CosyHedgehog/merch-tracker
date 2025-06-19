@@ -294,6 +294,7 @@ export function updateSortIndicators(column, direction) {
 
 // --- Read-only Mode ---
 export function enterReadOnlyMode() {
+    elements.appMain.classList.add('read-only-active');
     if (elements.showAddItemModalBtn) elements.showAddItemModalBtn.style.display = 'none';
     if (elements.importBtn) elements.importBtn.style.display = 'none';
     if (elements.deleteAllBtn) elements.deleteAllBtn.style.display = 'none';
@@ -314,6 +315,10 @@ export function enterReadOnlyMode() {
         <a href="${window.location.origin + window.location.pathname}" style="color: white; text-decoration: underline;">View your portfolio</a>`;
     
     elements.appMain.insertBefore(readOnlyBanner, elements.appMain.firstChild);
+
+    const bannerStyle = getComputedStyle(readOnlyBanner);
+    const bannerHeight = readOnlyBanner.offsetHeight + parseInt(bannerStyle.marginTop) + parseInt(bannerStyle.marginBottom);
+    elements.appMain.style.setProperty('--banner-height-adjustment', `${bannerHeight}px`);
 }
 
 // --- Helpers ---
