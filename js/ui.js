@@ -38,6 +38,13 @@ export function renderItems(items, pricesData) {
         td.textContent = 'No items tracked yet. Add some!';
         td.colSpan = 8;
         td.classList.add('no-items-cell');
+
+        if (!isReadOnlyMode) {
+            td.style.cursor = 'pointer';
+            td.title = 'Add a new item';
+            td.addEventListener('click', openAddItemModal);
+        }
+
         tr.appendChild(td);
         elements.itemListBody.appendChild(tr);
         return;
@@ -342,11 +349,11 @@ export function filterTableRowsVisual(items) {
     const noResultsRow = elements.itemListBody.querySelector('.search-no-results');
     if (noResultsRow) noResultsRow.remove();
 
-    if (visibleRows.length === 0) {
-        const { searchQuery } = getState();
+    const { searchQuery } = getState();
+    if (visibleRows.length === 0 && searchQuery.trim()) {
         const tr = document.createElement('tr');
         tr.className = 'search-no-results';
-        tr.innerHTML = `<td colspan="8" class="no-items-cell">${searchQuery.trim() ? `No items found matching "${searchQuery.trim()}"` : 'No items tracked yet. Add some!'}</td>`;
+        tr.innerHTML = `<td colspan="8" class="no-items-cell">No items found matching "${searchQuery.trim()}"</td>`;
         elements.itemListBody.appendChild(tr);
     }
 }
