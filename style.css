@@ -561,12 +561,25 @@ button:disabled {
   gap: var(--spacing-md);
 }
 
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
 .item-icon {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
   object-fit: cover;
   background: transparent;
+  font-size: 1rem;
 }
 
 .item-name {
@@ -577,24 +590,36 @@ button:disabled {
 }
 
 /* Styling for the wiki link icon */
-.wiki-link-icon {
-  margin-left: var(--spacing-xs); /* Use theme variable for spacing */
+.item-action-btn {
   text-decoration: none;
-  color: var(--text-muted); /* Use a muted color for the icon */
-  font-size: 0.9em; /* Slightly smaller than item name */
-  transition: color var(--transition-fast), opacity var(--transition-fast); /* Added opacity transition */
+  color: var(--text-secondary); /* Use a muted color for the icon */
+  font-size: 0.8rem; /* Slightly smaller than item name */
+  transition: all var(--transition-fast); /* Added opacity transition */
   display: inline-flex; /* Helps with alignment */
   align-items: center;
+  justify-content: center;
   opacity: 0; /* Hidden by default */
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid transparent;
 }
 
-#item-table tbody tr:hover .wiki-link-icon {
+#item-table tbody tr:hover .item-action-btn {
   opacity: 1; /* Show on row hover */
 }
 
-.wiki-link-icon:hover {
-  color: var(--accent-secondary); /* Highlight on hover */
+.item-action-btn:hover {
+  color: var(--text-primary); /* Highlight on hover */
   text-decoration: none; /* Ensure no underline on hover */
+  background-color: var(--bg-tertiary);
+  transform: scale(1.05);
+  border-color: var(--border-hover);
+}
+
+.book-icon {
+  font-size: 1.2rem;
 }
 
 /* Number formatting */
@@ -1121,7 +1146,7 @@ input::placeholder {
   }
 
   /* Always show wiki link icon on mobile */
-  .wiki-link-icon {
+  .item-action-btn {
     opacity: 1;
   }
 

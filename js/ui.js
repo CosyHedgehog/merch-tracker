@@ -54,9 +54,14 @@ export function renderItems(items, pricesData) {
         tr.innerHTML = `
             <td data-label="Item">
                 <div class="item-cell">
-                    <img src="${iconSrc}" alt="${item.name}" class="item-icon">
-                    <span class="item-name">${item.name}</span>
-                    <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="wiki-link-icon" title="View ${item.name} on OSRS Wiki">🔗</a>
+                    <div class="item-info">
+                        <img src="${iconSrc}" alt="${item.name}" class="item-icon">
+                        <span class="item-name">${item.name}</span>
+                        <div class="item-actions">
+                            <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View price data for ${item.name}">Price</a>
+                            <a href="https://oldschool.runescape.wiki/w/Special:Lookup?type=item&id=${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View ${item.name} on OSRS Wiki">Wiki</a>
+                        </div>
+                    </div>
                 </div>
             </td>
             <td data-label="Purchase Price"><span class="currency">${formatCurrency(item.purchasePrice)}</span></td>
@@ -69,7 +74,7 @@ export function renderItems(items, pricesData) {
 
         if (!isReadOnlyMode) {
             tr.addEventListener('click', (event) => {
-                if (event.target.closest('a.wiki-link-icon')) return;
+                if (event.target.closest('a.item-action-btn')) return;
                 const openEditModalEvent = new CustomEvent('openEditModal', { detail: { itemId: item.uniqueId } });
                 document.dispatchEvent(openEditModalEvent);
             });
