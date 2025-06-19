@@ -113,6 +113,7 @@ function handleSearch() {
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => {
         ui.updateStatistics(filtered, state.getState().cachedLatestPrices);
+        ui.animateStatistics();
     }, 300);
 }
 
@@ -154,6 +155,7 @@ function handleDeleteAll() {
     if (confirm("Are you sure you want to delete all items? This action cannot be undone.")) {
         state.clearAllItems();
         refreshTable(false);
+        ui.animateStatistics();
         ui.displayError("All items have been deleted.");
     }
 }
@@ -273,6 +275,7 @@ function setupEventListeners() {
             if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
                 state.removeItem(itemId);
                 refreshTable(false);
+                ui.animateStatistics();
             }
         }
     });
