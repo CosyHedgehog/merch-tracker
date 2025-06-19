@@ -65,9 +65,11 @@ export function renderItems(items, pricesData) {
                         <img src="${iconSrc}" alt="${item.name}" class="item-icon">
                         <span class="item-name scalable-text">${item.name}</span>
                         <div class="item-actions">
-                            <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View price data for ${item.name}">Price</a>
-                            <a href="https://oldschool.runescape.wiki/w/Special:Lookup?type=item&id=${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View ${item.name} on OSRS Wiki">Wiki</a>
-                            ${!isReadOnlyMode ? `<span class="item-action-btn delete-btn" data-item-id="${item.uniqueId}" data-item-name="${item.name}" title="Delete ${item.name}">Delete</span>` : ''}
+                            <div class="item-actions-inner">
+                                <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View price data for ${item.name}">Price</a>
+                                <a href="https://oldschool.runescape.wiki/w/Special:Lookup?type=item&id=${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View ${item.name} on OSRS Wiki">Wiki</a>
+                                ${!isReadOnlyMode ? `<span class="item-action-btn delete-btn" data-item-id="${item.uniqueId}" data-item-name="${item.name}" title="Delete ${item.name}">Delete</span>` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>

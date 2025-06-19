@@ -78,7 +78,7 @@ body {
 /* ===== MAIN LAYOUT ===== */
 .app-main {
   padding: var(--spacing-lg);
-  max-width: 1300px;
+  max-width: 1350px;
   margin: 0 auto;
 }
 
@@ -494,7 +494,7 @@ button:disabled {
 }
 
 #item-table th.item-col {
-  width: 35%;
+  width: 30%;
   text-align: left;
 }
 
@@ -583,10 +583,16 @@ button:disabled {
   align-items: center;
   gap: var(--spacing-xs);
   flex-shrink: 0; /* Prevent action buttons from shrinking */
-  opacity: 0;
   max-width: 0;
   overflow: hidden;
-  transition: opacity 0.3s ease-in-out, max-width 0.3s ease-in-out;
+  transition: max-width 0.4s ease-in-out 0.1s;
+}
+
+.item-actions-inner {
+    display: flex;
+    gap: var(--spacing-xs);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease-in-out;
 }
 
 .item-icon {
@@ -597,6 +603,7 @@ button:disabled {
   background: transparent;
   font-size: 1rem;
   flex-shrink: 0;
+  border: 1px solid transparent;
 }
 
 .item-name {
@@ -628,8 +635,11 @@ button:disabled {
 }
 
 #item-table tbody tr:hover .item-actions {
-    opacity: 1;
     max-width: 200px; /* Adjust as needed for buttons */
+}
+
+#item-table tbody tr:hover .item-actions-inner {
+    transform: translateX(0);
 }
 
 .item-action-btn:hover {
