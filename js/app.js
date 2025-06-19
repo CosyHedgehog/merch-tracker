@@ -103,16 +103,6 @@ function handleSaveItem() {
     ui.closeEditModal();
 }
 
-function handleDeleteItem() {
-    const { editingItemId } = state.getState();
-    const item = state.getItem(editingItemId);
-    if (item && confirm(`Are you sure you want to delete "${item.name}"?`)) {
-        state.removeItem(editingItemId);
-        refreshTable(false);
-        ui.closeEditModal();
-    }
-}
-
 function handleSearch() {
     state.setSearchQuery(elements.portfolioSearchInput.value);
     const filtered = state.getFilteredItems();
@@ -267,7 +257,6 @@ function setupEventListeners() {
     elements.editCloseModalBtn.addEventListener('click', ui.closeEditModal);
     elements.addItemBtn.addEventListener('click', handleAddItem);
     elements.saveItemBtn.addEventListener('click', handleSaveItem);
-    elements.deleteItemBtn.addEventListener('click', handleDeleteItem);
     elements.refreshPricesBtn.addEventListener('click', () => refreshTable(true, true));
     elements.portfolioSearchInput.addEventListener('input', handleSearch);
     elements.clearSearchBtn.addEventListener('click', clearSearch);
@@ -276,6 +265,16 @@ function setupEventListeners() {
     elements.shareBtn.addEventListener('click', handleShare);
     elements.importBtn.addEventListener('click', () => elements.importFileInput.click());
     elements.importFileInput.addEventListener('change', handleFileImport);
+
+    elements.itemListBody.addEventListener('click', e => {
+        if (e.target.classList.contains('delete-btn')) {
+            const { itemId, itemName } = e.target.dataset;
+            if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
+                state.removeItem(itemId);
+                refreshTable(false);
+            }
+        }
+    });
 
     elements.itemNameInput.addEventListener('input', e => {
         const query = e.target.value.toLowerCase();

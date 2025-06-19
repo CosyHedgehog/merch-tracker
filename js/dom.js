@@ -12,7 +12,6 @@ export const elements = {
     editCloseModalBtn: document.getElementById('edit-item-modal').querySelector('.close-btn'),
     addItemBtn: document.getElementById('add-item-btn'),
     saveItemBtn: document.getElementById('save-item-btn'),
-    deleteItemBtn: document.getElementById('delete-item-btn'),
     refreshPricesBtn: document.getElementById('refresh-prices-btn'),
     exportBtn: document.getElementById('export-btn'),
     importBtn: document.getElementById('import-btn'),

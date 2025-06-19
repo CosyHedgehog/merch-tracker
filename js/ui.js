@@ -59,7 +59,7 @@ export function renderItems(items, pricesData) {
         const iconSrc = getCachedImage(item.icon) || `${OSRS_WIKI_IMG_BASE_URL}${item.icon.replace(/ /g, '_')}`;
 
         tr.innerHTML = `
-            <td data-label="Item">
+            <td data-label="Item" class="item-col">
                 <div class="item-cell">
                     <div class="item-info">
                         <img src="${iconSrc}" alt="${item.name}" class="item-icon">
@@ -67,6 +67,7 @@ export function renderItems(items, pricesData) {
                         <div class="item-actions">
                             <a href="https://prices.runescape.wiki/osrs/item/${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View price data for ${item.name}">Price</a>
                             <a href="https://oldschool.runescape.wiki/w/Special:Lookup?type=item&id=${item.id}" target="_blank" rel="noopener noreferrer" class="item-action-btn" title="View ${item.name} on OSRS Wiki">Wiki</a>
+                            ${!isReadOnlyMode ? `<span class="item-action-btn delete-btn" data-item-id="${item.uniqueId}" data-item-name="${item.name}" title="Delete ${item.name}">Delete</span>` : ''}
                         </div>
                     </div>
                 </div>
@@ -81,7 +82,7 @@ export function renderItems(items, pricesData) {
 
         if (!isReadOnlyMode) {
             tr.addEventListener('click', (event) => {
-                if (event.target.closest('a.item-action-btn')) return;
+                if (event.target.closest('.item-action-btn')) return;
                 const openEditModalEvent = new CustomEvent('openEditModal', { detail: { itemId: item.uniqueId } });
                 document.dispatchEvent(openEditModalEvent);
             });
