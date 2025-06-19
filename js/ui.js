@@ -72,10 +72,10 @@ export function renderItems(items, pricesData) {
                     </div>
                 </div>
             </td>
-            <td data-label="Purchase Price"><span class="currency">${formatCurrency(item.purchasePrice)}</span></td>
+            <td data-label="Price"><span class="currency">${formatCurrency(item.purchasePrice)}</span></td>
             <td data-label="Qty"><span class="currency">${item.quantity.toLocaleString()}</span></td>
             <td data-label="Investment"><span class="currency">${formatCurrency(item.purchasePrice * item.quantity)}</span></td>
-            <td data-label="Price">${currentPrice !== null ? `<span class="currency">${formatCurrency(currentPrice)}</span>` : '<span class="text-muted">N/A</span>'}</td>
+            <td data-label="Curr Price">${currentPrice !== null ? `<span class="currency">${formatCurrency(currentPrice)}</span>` : '<span class="text-muted">N/A</span>'}</td>
             <td data-label="Price - Tax">${priceAfterTax !== null ? `<span class="currency">${formatCurrency(priceAfterTax)}</span>` : '<span class="text-muted">N/A</span>'}</td>
             ${generateProfitLossCells(item, currentPrice)}
         `;
