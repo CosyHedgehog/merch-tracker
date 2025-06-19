@@ -30,6 +30,7 @@ async function refreshTable(showLoading = true, forceFetch = false) {
     ui.updateStatistics(filteredItems, cachedLatestPrices);
     
     if (showLoading) {
+        ui.animateStatistics();
         await new Promise(resolve => setTimeout(resolve, 500)); // Prevent loading flicker
         ui.hideTableLoading();
     }

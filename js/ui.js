@@ -359,6 +359,22 @@ export function filterTableRowsVisual(items) {
     }
 }
 
+export function animateStatistics() {
+    const statElements = [
+        elements.totalItemsEl,
+        elements.totalInvestmentEl,
+        elements.currentValueEl,
+        elements.totalProfitLossEl,
+    ];
+
+    statElements.forEach(el => {
+        el.classList.add('animate-value-flip');
+        el.addEventListener('animationend', () => {
+            el.classList.remove('animate-value-flip');
+        }, { once: true });
+    });
+}
+
 export async function handleSelectItem(item) {
     elements.itemNameInput.value = item.name;
     hideDropdown();

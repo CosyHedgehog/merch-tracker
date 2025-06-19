@@ -1264,6 +1264,21 @@ input::placeholder {
     }
 }
 
+@keyframes value-flip-animation {
+    from {
+        transform: perspective(400px) rotateX(90deg);
+        opacity: 0;
+    }
+    to {
+        transform: perspective(400px) rotateX(0deg);
+        opacity: 1;
+    }
+}
+
+.animate-value-flip {
+    animation: value-flip-animation 0.6s ease-in-out;
+}
+
 #item-table tbody tr:hover .poop-emoji {
     display: inline-block;
     animation: emoji-bounce 0.8s ease-in-out infinite;
