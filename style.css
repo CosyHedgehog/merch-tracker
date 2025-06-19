@@ -1,29 +1,29 @@
 /* ===== MODERN DARK THEME VARIABLES ===== */
 :root {
   /* Colors */
-  --bg-primary: #0d1117;
-  --bg-secondary: #21262d;
-  --bg-tertiary: #2a2f37;
-  --bg-card: #161b22;
-  --bg-modal: rgba(13, 17, 23, 0.95);
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #1F1F1F;
+  --bg-tertiary: #2A2A2A;
+  --bg-card: #181818;
+  --bg-modal: rgba(10, 10, 10, 0.95);
   
-  --text-primary: #e6edf3;
-  --text-secondary: #b0bac5;
-  --text-muted: #768390;
+  --text-primary: #F5F5F5;
+  --text-secondary: #A0A0A0;
+  --text-muted: #6B6B6B;
   
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #2563eb;
-  --accent-secondary: #10b981;
-  --accent-secondary-hover: #059669;
-  --accent-danger: #ef4444;
-  --accent-danger-hover: #dc2626;
+  --accent-primary: #007BFF;
+  --accent-primary-hover: #0056b3;
+  --accent-secondary: #20E8A0;
+  --accent-secondary-hover: #18B37E;
+  --accent-danger: #FF3131;
+  --accent-danger-hover: #D92B2B;
   
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
+  --success: #00FF7F;
+  --warning: #FFD700;
+  --error: #FF3131;
   
-  --border-color: #30363d;
-  --border-hover: #454c56;
+  --border-color: #333333;
+  --border-hover: #444444;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -236,7 +236,7 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
   position: sticky;
