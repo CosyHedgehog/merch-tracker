@@ -412,8 +412,7 @@ button:disabled {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(42, 47, 66, 0.8);
-  backdrop-filter: blur(2px);
+  background: transparent;
   display: none;
   align-items: center;
   justify-content: center;
@@ -737,6 +736,7 @@ button:disabled {
   overflow: hidden; /* For rounded corners on internal content */
   max-height: calc(100vh - (2 * var(--spacing-md))); /* Ensure modal doesn't exceed viewport height with margin */
   overflow-y: auto; /* Allow internal scrolling for modal content if it's too tall */
+  animation: slideIn 0.3s ease-out;
 }
 
 .modal-header {
@@ -1242,6 +1242,36 @@ input::placeholder {
 
 .modal-content {
   animation: slideIn 0.3s ease-out;
+}
+
+@keyframes emoji-bounce {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.4) rotate(-10deg);
+    }
+}
+
+@keyframes fiery-animation {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 5px rgba(255, 165, 0, 0.5);
+    }
+    50% {
+        transform: scale(1.2);
+        text-shadow: 0 0 15px rgba(255, 69, 0, 1);
+    }
+}
+
+#item-table tbody tr:hover .poop-emoji {
+    display: inline-block;
+    animation: emoji-bounce 0.8s ease-in-out infinite;
+}
+
+#item-table tbody tr:hover .fire-emoji {
+    display: inline-block;
+    animation: fiery-animation 1s ease-in-out infinite;
 }
 
 /* ===== UTILITIES ===== */

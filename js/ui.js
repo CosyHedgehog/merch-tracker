@@ -115,11 +115,11 @@ function generateProfitLossCells(item, currentPrice) {
         const profitPercent = (profitLoss / totalInvestmentForItem) * 100;
         const percentClass = profitPercent > 0 ? 'profit' : (profitPercent < 0 ? 'loss' : 'neutral');
         let profitPercentDisplay = `${profitPercent >= 0 ? '+' : ''}${formatCurrency(profitPercent)}%`;
-        if (profitPercent > 30) profitPercentDisplay += ' 🔥';
-        else if (profitPercent <= -30) profitPercentDisplay += ' 💩';
+        if (profitPercent > 30) profitPercentDisplay += ' <span class="profit-emoji fire-emoji">🔥</span>';
+        else if (profitPercent <= -30) profitPercentDisplay += ' <span class="profit-emoji poop-emoji">💩</span>';
         profitPercentCell = `<td data-label="%"><span class="${percentClass}">${profitPercentDisplay}</span></td>`;
     } else if (potentialSaleAfterTax > 0) {
-        profitPercentCell = `<td data-label="%"><span class="profit">+∞% 🔥</span></td>`;
+        profitPercentCell = `<td data-label="%"><span class="profit">+∞% <span class="profit-emoji fire-emoji">🔥</span></span></td>`;
     } else {
         profitPercentCell = `<td data-label="%"><span class="neutral">N/A</span></td>`;
     }
