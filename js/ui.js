@@ -86,6 +86,14 @@ export function renderItems(items, pricesData) {
                 const openEditModalEvent = new CustomEvent('openEditModal', { detail: { itemId: item.uniqueId } });
                 document.dispatchEvent(openEditModalEvent);
             });
+
+            tr.addEventListener('mouseleave', () => {
+                const deleteBtn = tr.querySelector('.delete-btn.delete-confirm-active');
+                if (deleteBtn) {
+                    deleteBtn.classList.remove('delete-confirm-active');
+                    deleteBtn.textContent = 'Delete';
+                }
+            });
         }
         elements.itemListBody.appendChild(tr);
     });

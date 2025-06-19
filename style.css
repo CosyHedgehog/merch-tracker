@@ -629,7 +629,7 @@ button:disabled {
 
 #item-table tbody tr:hover .item-actions {
     opacity: 1;
-    max-width: 170px; /* Adjust as needed for buttons */
+    max-width: 200px; /* Adjust as needed for buttons */
 }
 
 .item-action-btn:hover {

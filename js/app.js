@@ -269,14 +269,36 @@ function setupEventListeners() {
     elements.importBtn.addEventListener('click', () => elements.importFileInput.click());
     elements.importFileInput.addEventListener('change', handleFileImport);
 
-    elements.itemListBody.addEventListener('click', e => {
-        if (e.target.classList.contains('delete-btn')) {
-            const { itemId, itemName } = e.target.dataset;
-            if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
-                state.removeItem(itemId);
-                refreshTable(false);
-                ui.animateStatistics();
+    const resetDeleteButtons = (exceptButton = null) => {
+        elements.itemListBody.querySelectorAll('.delete-btn.delete-confirm-active').forEach(btn => {
+            if (btn !== exceptButton) {
+                btn.classList.remove('delete-confirm-active');
+                btn.textContent = 'Delete';
             }
+        });
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.delete-btn')) {
+            resetDeleteButtons();
+        }
+    });
+
+    elements.itemListBody.addEventListener('click', e => {
+        const deleteBtn = e.target.closest('.delete-btn');
+        if (!deleteBtn) return;
+
+        e.stopPropagation(); // Prevent row click listener from firing
+
+        if (deleteBtn.classList.contains('delete-confirm-active')) {
+            const { itemId } = deleteBtn.dataset;
+            state.removeItem(itemId);
+            refreshTable(false);
+            ui.animateStatistics();
+        } else {
+            resetDeleteButtons(deleteBtn);
+            deleteBtn.classList.add('delete-confirm-active');
+            deleteBtn.textContent = 'Confirm?';
         }
     });
 
