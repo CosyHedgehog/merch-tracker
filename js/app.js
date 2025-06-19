@@ -376,8 +376,8 @@ async function loadFromShareableLink(encodedData) {
             };
         }).filter(Boolean); // Filter out any nulls if item not found
 
-        state.setTrackedItems(itemsFromLink);
         state.setReadOnlyMode(true);
+        state.setTrackedItems(itemsFromLink);
         ui.enterReadOnlyMode();
 
     } catch (error) {
